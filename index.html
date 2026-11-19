@@ -869,6 +869,7 @@ function ringFx(x,y,max,spd,col,dmg){const w=take(waves);if(!w)return null;w.x=x
 function flash(col,t){flashCol=col;flashT=t||0.25;}
 
 function newGame(){
+  if(C||!$('cityUI').classList.contains('hidden'))closeCity();
   clearAll();for(const w of waves)w.on=false;
   lv={};for(const u of UPG)lv[u.id]=0;
   diff=DIFF[diffIdx];
@@ -2119,7 +2120,13 @@ function runText(raw){
 const CHIPS=[['🐱 obří kočka','obří kočka'],['🍕 prší pizzy','prší pizzy'],['🐷 létající prasata','5 létajících prasat'],['🤖 zlý robot','zlý robot'],['🧟 zombie','3 zombie'],['🦖 dinosaurus','obří dinosaurus'],['🚀 raketa','raketa'],['☄️ meteor','3 meteory'],['🌪️ tornádo','tornádo'],['💣 bomby','5 bomb'],['🐉 drak','drak'],['🛸 UFO','ufo'],['👾 monstrum','monstrum'],['🔥 požár','požár'],['🌍 zemětřesení','zemětřesení'],['⛈️ bouřka','bouřka'],['🏗️ postav','postav 3 domy'],['🏙️ mrakodrap','postav mrakodrap'],['🌊 povodeň','povodeň'],['🕳️ černá díra','černá díra'],['🌀 bez gravitace','bez gravitace'],['🎆 ohňostroj','ohňostroj'],['✈️ letadla','2 letadla'],['🪖 tank','tank'],['⚪ koule','koule'],['☢️ atomovka','atomová bomba'],['🌙 noc','noc'],['☀️ den','den'],['🔧 oprav','oprav město'],['💀 apokalypsa','apokalypsa']];
 (function(){const box=$('chips');for(const [l,cmd] of CHIPS){const b=document.createElement('button');b.type='button';b.textContent=l;b.onclick=()=>{ensureAC();runText(cmd);};box.appendChild(b);}})();
 $('cityForm').addEventListener('submit',e=>{e.preventDefault();ensureAC();const v=$('cityIn').value;$('cityIn').value='';$('cityIn').blur();runText(v);});
-$('cityBack').onclick=()=>{$('cityUI').classList.add('hidden');setState('menu');};
+function closeCity(){
+  try{$('cityIn').blur();}catch(e){}
+  $('cityUI').classList.add('hidden');$('cityMsg').textContent='';
+  C=null;skyCan=null;for(const p of parts)p.on=false;for(const w of waves)w.on=false;for(const f of fts)f.on=false;shake=0;flashT=0;
+  resize();
+}
+$('cityBack').onclick=()=>{closeCity();setState('menu');};
 $('cityHelp').onclick=()=>cityMsg('Napiš COKOLI a objeví se to!\n„obří růžová kočka“, „prší pizzy“,\n„5 létajících prasat“, „zlý robot“,\n„ohnivý drak“, „zombie“, „raketa“,\n„3 meteory vlevo“, „oprav město“ 💥',8);
 function openCity(){
   ensureAC();setState('city');$('cityUI').classList.remove('hidden');$('cityTitleBox').innerHTML='';$('cityTitleBox').appendChild(textCanvas('MĚSTO','#5dff8a',4));
@@ -2821,7 +2828,7 @@ function loop(now){
   let dt=(now-last)/1000;last=now;
   if(dt>0.05)dt=0.05;if(dt<0)dt=0;
   update(dt);
-  if(state==='city'){cityUpdate(dt);cityDraw();}else draw();
+  if(state==='city'){cityUpdate(dt);cityDraw();}else{if(C)closeCity();draw();}
   drawFlash();
   requestAnimationFrame(loop);
 }
