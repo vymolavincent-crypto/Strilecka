@@ -14,4 +14,4 @@ uloží a jede i bez internetu. Zdarma přes GitHub Pages:
 6) Hotovo – ikona lodi na ploše, hra jede i bez internetu.
 
 Když hru později aktualizuješ, nahraj nové soubory a v sw.js
-zvyš číslo verze (neon-najezd-v3 → v4).
+zvyš číslo verze (neon-najezd-v5 → v6).
