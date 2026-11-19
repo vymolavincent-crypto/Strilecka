@@ -451,7 +451,7 @@ const plasmaInt=()=>[0,2.2,1.4][lv.plasma];
 
 /* ================= stav ================= */
 let state='menu',player=null,ship=SHIPS[0],shipSpr=null,score=0,crystals=0,crTotal=0,kills=0,wave=0,toSpawn=0,spawnT=0,waveDelay=0,boss=null,phase='wave',station=null,fixCount=0;
-let chain=0,comboT=0,shake=0,bannerText='',bannerSub='',bannerT=0,time=0,deadT=0,dockT=0;
+let stationWave=0,chain=0,comboT=0,shake=0,bannerText='',bannerSub='',bannerT=0,time=0,deadT=0,dockT=0;
 const keys={};
 
 function newGame(){
@@ -459,7 +459,7 @@ function newGame(){
   lv={};for(const u of UPG)lv[u.id]=0;
   ship=shipById(shipId);shipSpr=buildShip(ship,lv);
   player={x:GW/2,y:IH*0.8,tx:GW/2,ty:IH*0.8,hp:ship.hp,maxHp:ship.hp,inv:1.5,fireT:0,canT:0,mslT:1,plT:1,shield:false,shdT:0,dt:0,beamT:0,beamY:0,beamOn:false,revive:ship.id==='fenix',drones:[{x:GW/2,y:IH},{x:GW/2,y:IH}]};
-  score=0;crystals=0;crTotal=0;kills=0;wave=0;toSpawn=0;waveDelay=0.8;boss=null;phase='wave';station=null;fixCount=0;loopN=0;
+  score=0;crystals=0;crTotal=0;kills=0;wave=0;toSpawn=0;waveDelay=0.8;boss=null;phase='wave';station=null;fixCount=0;loopN=0;stationWave=0;
   chain=0;comboT=0;shake=0;time=0;bannerT=0;
   setBiome(0);
   setState('play');
@@ -807,7 +807,7 @@ function update(dt){
         }
       }else if(!boss){
         let any=false;for(const e of enemies)if(e.on){any=true;break;}
-        if(!any){waveDelay-=dt;if(waveDelay<=0){waveDelay=1.4;if(wave>0&&(wib()===3||wib()===5))spawnStation();else nextWave();}}
+        if(!any){waveDelay-=dt;if(waveDelay<=0){waveDelay=1.4;if(wave>0&&(wib()===3||wib()===5)&&stationWave!==wave){stationWave=wave;spawnStation();}else nextWave();}}
       }
     }
   }else p.beamOn=false;
@@ -1106,7 +1106,7 @@ function loop(now){
 let rT=0;addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(resize,120);});
 resize();setState('menu');requestAnimationFrame(loop);
 
-if(location.hash==='#debug')window.__dbg={spawnEnemy,spawnBoss,spawnStation,nextWave,setWave:w=>{wave=w;},setBiome,lv:()=>lv,state:()=>state,give:n=>{crystals+=n;},bank:n=>{bank+=n;},god:()=>{player.hp=99;player.maxHp=99;},clear:()=>{toSpawn=0;},st:()=>station&&[station.x,station.y],pl:()=>[player.x,player.y,player.hp],dock:()=>{if(station){const D=dockPos();player.x=player.tx=D.x;player.y=player.ty=D.y+6;}},setShip:id=>{shipId=id;},upg:o=>{Object.assign(lv,o);shipSpr=buildShip(ship,lv);}};
+if(location.hash==='#debug')window.__dbg={spawnEnemy,spawnBoss,spawnStation,nextWave,setWave:w=>{wave=w;},setBiome,lv:()=>lv,state:()=>state,give:n=>{crystals+=n;},bank:n=>{bank+=n;},wave:()=>wave,god:()=>{player.hp=99;player.maxHp=99;},clear:()=>{toSpawn=0;},st:()=>station&&[station.x,station.y],pl:()=>[player.x,player.y,player.hp],dock:()=>{if(station){const D=dockPos();player.x=player.tx=D.x;player.y=player.ty=D.y+6;}},setShip:id=>{shipId=id;},upg:o=>{Object.assign(lv,o);shipSpr=buildShip(ship,lv);}};
 /* ================= offline režim (funguje, když je hra nahraná na webu) ================= */
 try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&window.self===window.top){navigator.serviceWorker.register('sw.js').catch(()=>{});}}catch(e){}
 })();
