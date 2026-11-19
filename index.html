@@ -47,7 +47,7 @@ button.gold{border-color:#ffe14d;box-shadow:0 5px 0 #000,inset 0 -4px 0 #d68a1a;
 .menuBank{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;display:flex;align-items:center;gap:5px;font-weight:800;color:#ffe14d;font-size:16px}
 .shipRow{display:flex;align-items:center;gap:10px;justify-content:center}
 .bigPlay{font-size:24px;padding:14px 56px}
-.menuGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;width:100%;max-width:360px}
+.menuGrid{display:grid;grid-template-columns:repeat(3,1fr);/* MĚSTO dočasně skryto */gap:9px;width:100%;max-width:360px}
 .tile{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 4px;border:3px solid #d68a1a;background:#2a200a;box-shadow:0 4px 0 #000;font-weight:800;font-size:12px;letter-spacing:1px;position:relative}
 .tile i{font-style:normal;font-size:24px}
 .tile:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
@@ -113,7 +113,7 @@ table.lb tr.me td{color:#ffe14d}
     <button class="tile" id="permBtn"><i>🔧</i>DÍLNA</button>
     <button class="tile" id="dailyBtn"><i>📅</i>ÚKOLY<span id="dailyBadge"></span></button>
     <button class="tile" id="lbBtn"><i>🏆</i>REKORDY</button>
-    <button class="tile city" id="cityBtn"><i>🏙️</i>MĚSTO</button>
+    <button class="tile city hidden" id="cityBtn"><i>🏙️</i>MĚSTO</button>
   </div>
   <div class="row2 small"><button class="sec" id="musBtn">♫ HUDBA</button><button class="sec" id="tutBtn">? NÁVOD</button></div>
   <p id="bestMenu" style="opacity:.55;font-size:12px"></p>
