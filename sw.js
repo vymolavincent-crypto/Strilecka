@@ -1,6 +1,6 @@
 // Offline režim: hra se uloží do telefonu, takže jde hrát i bez internetu.
 // Když je internet, vždy se nejdřív stáhne nejnovější verze (aktualizace přijdou hned).
-const CACHE = 'neon-najezd-v11';
+const CACHE = 'neon-najezd-v12';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
