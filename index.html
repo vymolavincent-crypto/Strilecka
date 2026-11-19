@@ -53,6 +53,17 @@ button.gold{border-color:#ffe14d;box-shadow:0 5px 0 #000,inset 0 -4px 0 #d68a1a;
 @keyframes pulse{from{transform:scale(1)}to{transform:scale(1.08)}}
 .planet{image-rendering:pixelated}
 .lock{color:#ff3b4e}
+.dlg{display:flex;gap:10px;align-items:flex-start;width:100%;max-width:440px;background:#0d1030;border:3px solid #41e6ff;box-shadow:0 5px 0 #000;padding:10px;box-sizing:border-box;text-align:left}
+.dlg .dtxt{display:flex;flex-direction:column;gap:4px;font-size:15px;line-height:1.45;min-height:88px}
+.dlg b{color:#ffe14d;font-size:14px}
+table.lb{border-collapse:collapse;font-size:12px;width:100%;max-width:440px}
+table.lb td,table.lb th{padding:5px 4px;border-bottom:2px solid #1c2470;text-align:left}
+table.lb th{color:#8890c0;font-size:11px}
+table.lb tr.me td{color:#ffe14d}
+.skins{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:440px}
+.skin{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px;border:3px solid #2a8ad9;background:#0d1030;box-shadow:0 3px 0 #000;font-size:11px;width:86px;box-sizing:border-box}
+.skin.sel{border-color:#ffe14d;background:#1e1a0a}
+.skin.off{opacity:.45}
 </style>
 </head>
 <body>
@@ -69,6 +80,7 @@ button.gold{border-color:#ffe14d;box-shadow:0 5px 0 #000,inset 0 -4px 0 #d68a1a;
   <div class="diff" id="diffBox"><button data-d="0" class="e">LEHKÁ</button><button data-d="1">NORMÁLNÍ</button><button data-d="2" class="h">ŠÍLENÁ</button></div>
   <button id="startBtn">▶ HRÁT</button>
   <div class="row2"><button class="gold sec" id="hangarBtn">🚀 HANGÁR</button><button class="gold sec" id="galaxyBtn">🪐 GALAXIE</button><button class="gold sec" id="permBtn">🔧 DÍLNA</button></div>
+  <div class="row2"><button class="sec" id="lbBtn">🏆 REKORDY</button><button class="sec" id="musBtn">♫ HUDBA</button><button class="sec" id="tutBtn">? NÁVOD</button></div>
   <p class="hint">Táhni prstem – loď letí s tebou a střílí sama. Sbírej krystaly, na stanicích kupuj vylepšení. Když se nabije ⚡, zmáčkni ho pro superschopnost!</p>
   <p id="bestMenu" style="opacity:.6"></p>
 </div>
@@ -97,9 +109,21 @@ button.gold{border-color:#ffe14d;box-shadow:0 5px 0 #000,inset 0 -4px 0 #d68a1a;
   <button class="backBtn">ZPĚT</button>
 </div>
 
+<div id="records" class="overlay top hidden">
+  <div id="lbTitle"></div>
+  <table class="lb" id="lbTable"></table>
+  <button class="backBtn">ZPĚT</button>
+</div>
+
+<div id="story" class="overlay hidden" style="justify-content:flex-end;background:rgba(7,6,26,.5)">
+  <div class="dlg"><div id="stPort"></div><div class="dtxt"><b id="stName"></b><span id="stText"></span></div></div>
+  <div class="row2"><button class="sec" id="stSkip">Přeskočit</button><button id="stNext">DÁL ▶</button></div>
+</div>
+
 <div id="pause" class="overlay hidden">
   <div id="pauseTitle"></div>
   <button id="resumeBtn">▶ POKRAČOVAT</button>
+  <button class="sec" id="musBtn2">♫ HUDBA</button>
   <button class="sec" id="quitBtn">Do menu</button>
 </div>
 
@@ -114,6 +138,7 @@ button.gold{border-color:#ffe14d;box-shadow:0 5px 0 #000,inset 0 -4px 0 #d68a1a;
 <div id="over" class="overlay hidden">
   <div id="overTitle"></div><div id="winTitle"></div><div id="pathTitle"></div>
   <div class="stats" id="overStats"></div>
+  <button class="gold" id="endlessBtn">∞ POKRAČOVAT DÁL</button>
   <button id="againBtn">↻ ZNOVU</button>
   <button class="sec" id="menuBtn">Menu</button>
 </div>
@@ -162,9 +187,88 @@ function snd(freq,dur,type,vol,slide){
   }catch(e){}
 }
 const vib=ms=>{try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}};
+function ensureAC(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}return AC;}
+/* ================= 8bit hudba ================= */
+let musicOn=store.get('px_mus','1')!=='0';
+const SCALES={minor:[0,2,3,5,7,8,10],dor:[0,2,3,5,7,9,10],maj:[0,2,4,5,7,9,11],phry:[0,1,3,5,7,8,10],harm:[0,2,3,5,7,8,11]};
+const TRACKS={
+  menu:{bpm:100,root:57,sc:'dor',prog:[0,3,4,3],seed:3,lead:'square'},
+  b0:{bpm:126,root:52,sc:'minor',prog:[0,5,3,4],seed:11,lead:'square'},
+  b1:{bpm:112,root:59,sc:'dor',prog:[0,2,3,4],seed:22,lead:'triangle'},
+  b2:{bpm:140,root:50,sc:'phry',prog:[0,1,0,6],seed:33,lead:'sawtooth'},
+  b3:{bpm:132,root:53,sc:'harm',prog:[0,3,4,0],seed:44,lead:'square'},
+  b4:{bpm:118,root:61,sc:'maj',prog:[0,4,5,3],seed:55,lead:'triangle'},
+  b5:{bpm:136,root:48,sc:'minor',prog:[0,6,5,4],seed:66,lead:'square'},
+  b6:{bpm:108,root:47,sc:'phry',prog:[0,1,5,1],seed:77,lead:'sawtooth'},
+  b7:{bpm:150,root:50,sc:'harm',prog:[0,5,3,4],seed:99,lead:'sawtooth'},
+  boss:{bpm:152,root:52,sc:'harm',prog:[0,0,5,4],seed:88,lead:'sawtooth'},
+  win:{bpm:116,root:60,sc:'maj',prog:[0,3,4,0],seed:7,lead:'triangle'},
+};
+const MUS={cur:null,step:0,nextT:0,timer:null,master:null,noise:null,cache:{}};
+function genTrack(T){
+  let seed=T.seed*9301+49297;const r=()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  const sc=SCALES[T.sc],note=d=>T.root+12*Math.floor(d/7)+sc[((d%7)+7)%7];
+  const lead=[],bass=[],arp=[],drum=[];
+  const rhythms=[[1,0,1,0,1,0,0,1,0,1,1,0,1,0,0,0],[1,0,0,1,0,0,1,0,1,0,0,1,0,1,0,0],[1,0,1,1,0,1,0,0,1,0,1,0,1,1,0,0]];
+  const rhy=rhythms[Math.floor(r()*3)],rhy2=rhythms[Math.floor(r()*3)];
+  let deg=7+T.prog[0];const phrase=[];
+  for(let b=0;b<4;b++){
+    const c=T.prog[b],chord=[c,c+2,c+4];
+    for(let i=0;i<16;i++){
+      const st=b*16+i;
+      bass[st]=([1,0,0,1,0,0,1,0,1,0,1,0,0,1,0,1][i])?note(c-7)+(i%8===6?12:0):-1;
+      arp[st]=i%2===0?note(c+[0,2,4,7][(i/2)%4])+12:-1;
+      drum[st]=i%8===0?1:i%8===4?2:(i%2===1?3:0);
+      let n=-1;const R=(b%2===0)?rhy:rhy2;
+      if(b===2){n=phrase[i];}
+      else if(R[i]){deg+=Math.floor(r()*5)-2;if(deg<5)deg+=3;if(deg>13)deg-=3;
+        if(i%4===0){let best=deg,bd=99;for(const t of chord)for(const o of[0,7,14]){const dd=Math.abs(t+o-deg);if(dd<bd){bd=dd;best=t+o;}}deg=best;}
+        if(b===3&&i>=12)deg=7+c;n=note(deg);}
+      if(b===0)phrase[i]=n;
+      lead[st]=n;
+    }
+  }
+  return {lead,bass,arp,drum};
+}
+function mtof(m){return 440*Math.pow(2,(m-69)/12);}
+function musNote(type,m,t,dur,vol){
+  const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(mtof(m),t);
+  g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(vol,t+0.008);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g);g.connect(MUS.master);o.start(t);o.stop(t+dur+0.02);
+}
+function musDrum(k,t){
+  if(k===1){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(40,t+0.12);g.gain.setValueAtTime(0.5,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.15);o.connect(g);g.connect(MUS.master);o.start(t);o.stop(t+0.17);return;}
+  const src=AC.createBufferSource(),g=AC.createGain(),f=AC.createBiquadFilter();src.buffer=MUS.noise;
+  f.type=k===2?'bandpass':'highpass';f.frequency.value=k===2?1800:7000;
+  const d=k===2?0.12:0.035;g.gain.setValueAtTime(k===2?0.28:0.09,t);g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+  src.connect(f);f.connect(g);g.connect(MUS.master);src.start(t);src.stop(t+d+0.02);
+}
+function musTick(){
+  if(!AC||!MUS.cur||!musicOn||state==='pause')return;
+  const T=TRACKS[MUS.cur],P=MUS.cache[MUS.cur],sd=60/T.bpm/4;
+  if(MUS.nextT<AC.currentTime-0.2)MUS.nextT=AC.currentTime+0.05;
+  while(MUS.nextT<AC.currentTime+0.18){
+    const i=MUS.step,t=MUS.nextT;
+    if(P.lead[i]>=0){let len=1;while(len<4&&P.lead[(i+len)%64]<0)len++;musNote(T.lead,P.lead[i],t,sd*len*0.95,0.09);}
+    if(P.bass[i]>=0)musNote('triangle',P.bass[i],t,sd*1.6,0.22);
+    if(P.arp[i]>=0)musNote('square',P.arp[i],t,sd*0.7,0.025);
+    if(P.drum[i])musDrum(P.drum[i],t);
+    MUS.step=(i+1)%64;MUS.nextT+=sd;
+  }
+}
+function setMusic(name){
+  if(!ensureAC())return;
+  if(!MUS.master){MUS.master=AC.createGain();MUS.master.gain.value=0.5;MUS.master.connect(AC.destination);
+    const b=AC.createBuffer(1,Math.floor(AC.sampleRate*0.5),AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;MUS.noise=b;
+    MUS.timer=setInterval(musTick,45);}
+  if(MUS.cur===name)return;
+  MUS.cur=name;if(!MUS.cache[name])MUS.cache[name]=genTrack(TRACKS[name]);
+  MUS.step=0;MUS.nextT=AC.currentTime+0.06;
+}
+function musMute(m){if(MUS.master&&AC)MUS.master.gain.setTargetAtTime(m||!musicOn?0:0.5,AC.currentTime,0.05);}
 
 /* ================= paleta a sprity ================= */
-const PAL={w:'#ffffff',c:'#41e6ff',C:'#2a8ad9',b:'#2c3f9e',B:'#1c2470',p:'#ff4fd8',P:'#9b2a9e',y:'#ffe14d',Y:'#d68a1a',o:'#ff8a2a',O:'#b84a12',r:'#ff3b4e',R:'#9e1d3a',g:'#5dff8a',G:'#1f9e5a',s:'#a0a8c8',S:'#5a6080',d:'#383c58',v:'#b07bff',V:'#5a3aa8',k:'#1a1630',n:'#9a6a48',N:'#5e3d2c',i:'#e4f8ff',I:'#8fd3ff',j:'#3a7fc0',m:'#5a1008',h:'#c6f04a',H:'#5f8a1c',q:'#5a2a6a',Q:'#2e1640',z:'#ff7af0'};
+const PAL={w:'#ffffff',c:'#41e6ff',C:'#2a8ad9',b:'#2c3f9e',B:'#1c2470',p:'#ff4fd8',P:'#9b2a9e',y:'#ffe14d',Y:'#d68a1a',o:'#ff8a2a',O:'#b84a12',r:'#ff3b4e',R:'#9e1d3a',g:'#5dff8a',G:'#1f9e5a',s:'#a0a8c8',S:'#5a6080',d:'#383c58',v:'#b07bff',V:'#5a3aa8',k:'#1a1630',n:'#9a6a48',N:'#5e3d2c',i:'#e4f8ff',I:'#8fd3ff',j:'#3a7fc0',m:'#5a1008',h:'#c6f04a',H:'#5f8a1c',q:'#5a2a6a',Q:'#2e1640',z:'#ff7af0',u:'#f0c8a0',U:'#c08060'};
 const OUT='#05040f';
 function expand(rows,mode){
   let R=rows.slice();
@@ -342,13 +446,35 @@ const SHIPS=[
    rows:[".......r","......rw","......ry","r....rRy","rR..rRoy","rRR.rRoo",".rRRrRoy","..rRRRow","..rRRRRo",".rR.rRRR","rR...R.R","R......."]},
 ];
 const shipById=id=>SHIPS.find(s=>s.id===id)||SHIPS[0];
+const SKINS=[
+  {id:'base',name:'Základní',price:0},
+  {id:'pink',name:'Růžová',price:800,L:'p',M:'P',D:'q'},
+  {id:'emerald',name:'Smaragd',price:800,L:'g',M:'G',D:'H'},
+  {id:'ice',name:'Ledová',price:1000,L:'i',M:'I',D:'j'},
+  {id:'lava',name:'Lávová',price:1000,L:'o',M:'R',D:'m'},
+  {id:'shadow',name:'Stínová',price:1200,L:'v',M:'q',D:'Q'},
+  {id:'gold',name:'Zlatá',price:1500,L:'y',M:'Y',D:'N'},
+  {id:'rainbow',name:'Duhová',price:3000,rainbow:true},
+];
+let ownedSk=['base'];try{ownedSk=JSON.parse(store.get('px_skins','["base"]'))||['base'];}catch(e){}
+let skinId=store.get('px_skin','base');if(!ownedSk.includes(skinId))skinId='base';
+const SK_L='cgovrpyhiIsz',SK_M='CGOVRPHjSY',SK_D='bBdkmNnqQ';
+function skinRows(rows,sk){
+  if(!sk||sk.id==='base')return rows;
+  const RB='roygcv';
+  return rows.map((r,y)=>r.split('').map(ch=>{
+    if(ch==='.'||ch==='w')return ch;
+    if(sk.rainbow){if(SK_D.includes(ch))return 'k';return RB[Math.floor(y/2)%6];}
+    if(SK_L.includes(ch))return sk.L;if(SK_M.includes(ch))return sk.M;if(SK_D.includes(ch))return sk.D;return ch;}).join(''));
+}
+const skinById=id=>SKINS.find(k=>k.id===id)||SKINS[0];
 const SGW=29,SGH=21,SCX=14,SY0=5;
-function buildShip(def,L){
-  L=L||{};
+function buildShip(def,L,sk){
+  L=L||{};if(sk===undefined)sk=skinById(skinId);
   const g=[];for(let y=0;y<SGH;y++)g.push(new Array(SGW).fill('.'));
   const put=(x,y,ch)=>{if(ch!=='.'&&y>=0&&y<SGH&&x>=0&&x<SGW)g[y][x]=ch;};
   const part=(rows,dx,dy)=>rows.forEach((r,py)=>{for(let px=0;px<r.length;px++){const x=SCX+dx+px;put(x,SY0+dy+py,r[px]);put(2*SCX-x,SY0+dy+py,r[px]);}});
-  const base=expand(def.rows,'m'),bw=base[0].length,x0=SCX-(bw>>1);
+  const base=skinRows(expand(def.rows,'m'),sk),bw=base[0].length,x0=SCX-(bw>>1);
   // spodní vrstva
   for(let k=0;k<(L.gun||0);k++)part(["s","s","S","S"],-(5+k*2),3+k);
   if(L.msl>=1)part(["r","s","S"],-7,8);
@@ -372,12 +498,51 @@ function buildShip(def,L){
   sp.engY=SY0+1+base.length-sp.hh;sp.noseY=SY0+1-sp.hh;
   return sp;
 }
-const SHIPSPR={};for(const s of SHIPS)SHIPSPR[s.id]=buildShip(s);
+const NOVA=mk(["....CCCC","..CCcccc",".CcccCCC",".CcCuuuu","CcCuuuuu","CcuukUuu","Ccuuuuuu","Ccuuuuuu",".Cuuuuuu",".Cuuuurr","..CuuuUU","...bbbbb","..bbcbbb",".bbbcbbw"]);
+const STORY={
+  start:[['nova','Pilote! Pán galaxie ukradl Hvězdné krystaly a jeho armáda obsazuje jednu planetu za druhou.'],['nova','Leť přes všech 7 planet a zastav ho. Sbírej krystaly a na stanicích si vylepšuj loď. Věřím ti!']],
+  b1:[['nova','Ledová mlhovina… Královna tu zmrazila celou flotilu. Pozor na komety!'],['bIce','Další pilot do mé sbírky? Zmrzneš jako všichni ostatní!']],
+  b2:[['nova','Lávový pás. Tyhle kameny vybuchují – drž si odstup!'],['bLava','Shoříš v mém ohni, malá lodičko!']],
+  b3:[['nova','Úl. Tady se líhne jeho armáda. Vajíčka znič dřív, než se vylíhnou!'],['bHive','Bzzz… moje děti tě sežerou!']],
+  b4:[['nova','Krystalová jeskyně. Odtud bere Pán galaxie svou sílu.'],['bCrystal','Moje krystaly tě rozdrtí na prach!']],
+  b5:[['nova','Robotí továrna. Tady staví nové lodě – musíš ji vypnout!'],['bRobot','CÍL NALEZEN. ZAHÁJIT LIKVIDACI.']],
+  b6:[['nova','Černá díra… Za ní je Jádro galaxie. Drž se, tahá to loď ke středu!'],['bVoid','Všechno skončí v prázdnotě…']],
+  final:[['bFinal','Dostal ses až sem? Působivé. Ale tady tvoje cesta končí!'],['nova','Tohle je ono, pilote. Celá galaxie se na tebe dívá. Ukaž mu to!']],
+  win:[['nova','Dokázal jsi to! Pán galaxie padl a Hvězdné krystaly jsou zpět.'],['nova','Jsi hrdina celé galaxie! …Ale na radaru vidím další nepřátele. Poletíš dál?']],
+};
+let storyQ=null,storyI=0,storyThen=null,storyTyping=null,storyShown={};
+function storyPortrait(who){
+  if(who==='nova')return {name:'VELITELKA NOVA',spr:NOVA,sc:5};
+  const d=ED[who];return {name:d.name,spr:d.fr[0],sc:who==='bFinal'?2:3};
+}
+function startStory(key,then){
+  if(!STORY[key]){then&&then();return;}
+  storyQ=STORY[key];storyI=0;storyThen=then||null;state='story';pid=null;
+  for(const id of['menu','pause','over','shop','hangar','galaxy','perm','records'])$(id).classList.add('hidden');
+  $('hudBtns').classList.add('hidden');$('superBtn').classList.add('hidden');superShown=false;
+  $('story').classList.remove('hidden');showStoryLine();
+}
+function showStoryLine(){
+  const [who,text]=storyQ[storyI],P=storyPortrait(who);
+  const pc=$('stPort');pc.innerHTML='';pc.appendChild(sprCanvas(P.spr,P.sc));
+  $('stName').textContent=P.name;$('stName').style.color=who==='nova'?'#41e6ff':'#ff3b4e';
+  const el=$('stText');let n=0;clearInterval(storyTyping);el.textContent='';
+  storyTyping=setInterval(()=>{n+=2;el.textContent=text.slice(0,n);if(n%6===0)snd(who==='nova'?900:300,0.03,'square',0.015);if(n>=text.length){clearInterval(storyTyping);storyTyping=null;}},28);
+}
+function storyNext(skip){
+  if(!storyQ)return;
+  if(!skip&&storyTyping){clearInterval(storyTyping);storyTyping=null;$('stText').textContent=storyQ[storyI][1];return;}
+  storyI++;
+  if(skip||storyI>=storyQ.length){clearInterval(storyTyping);storyTyping=null;$('story').classList.add('hidden');const t=storyThen;storyThen=null;storyQ=null;
+    if(t)t();else{setState('play');last=performance.now();}return;}
+  showStoryLine();
+}
+const SHIPSPR={};function rebuildPreviews(){for(const s of SHIPS)SHIPSPR[s.id]=buildShip(s);}rebuildPreviews();
 
 /* ================= pixelový font ================= */
 const FONT={A:[".#.","#.#","###","#.#","#.#"],B:["##.","#.#","##.","#.#","##."],C:[".##","#..","#..","#..",".##"],D:["##.","#.#","#.#","#.#","##."],E:["###","#..","##.","#..","###"],F:["###","#..","##.","#..","#.."],G:[".##","#..","#.#","#.#",".##"],H:["#.#","#.#","###","#.#","#.#"],I:["###",".#.",".#.",".#.","###"],J:["..#","..#","..#","#.#",".#."],K:["#.#","#.#","##.","#.#","#.#"],L:["#..","#..","#..","#..","###"],M:["#...#","##.##","#.#.#","#...#","#...#"],N:["#..#","##.#","#.##","#..#","#..#"],O:[".#.","#.#","#.#","#.#",".#."],P:["##.","#.#","##.","#..","#.."],Q:[".#.","#.#","#.#","##.",".##"],R:["##.","#.#","##.","#.#","#.#"],S:[".##","#..",".#.","..#","##."],T:["###",".#.",".#.",".#.",".#."],U:["#.#","#.#","#.#","#.#","###"],V:["#.#","#.#","#.#","#.#",".#."],W:["#...#","#...#","#.#.#","##.##","#...#"],X:["#.#","#.#",".#.","#.#","#.#"],Y:["#.#","#.#",".#.",".#.",".#."],Z:["###","..#",".#.","#..","###"],
 '0':["###","#.#","#.#","#.#","###"],'1':[".#.","##.",".#.",".#.","###"],'2':["##.","..#",".#.","#..","###"],'3':["##.","..#",".#.","..#","##."],'4':["#.#","#.#","###","..#","..#"],'5':["###","#..","##.","..#","##."],'6':[".##","#..","###","#.#","###"],'7':["###","..#",".#.",".#.",".#."],'8':["###","#.#","###","#.#","###"],'9':["###","#.#","###","..#","##."],
-' ':["..","..","..","..",".."],'!':["#","#","#",".","#"],'+':["...",".#.","###",".#.","..."],'-':["...","...","###","...","..."],'.':[".",".",".",".","#"],':':[".","#",".","#","."],'/':["..#","..#",".#.","#..","#.."],'?':["##.","..#",".#.","...",".#."],'>':["#..",".#.","..#",".#.","#.."],'×':["...","#.#",".#.","#.#","..."]};
+' ':["..","..","..","..",".."],'!':["#","#","#",".","#"],'+':["...",".#.","###",".#.","..."],'-':["...","...","###","...","..."],'.':[".",".",".",".","#"],':':[".","#",".","#","."],'/':["..#","..#",".#.","#..","#.."],'?':["##.","..#",".#.","...",".#."],'>':["#..",".#.","..#",".#.","#.."],'<':["..#",".#.","#..",".#.","..#"],'×':["...","#.#",".#.","#.#","..."]};
 const ACC={'Á':['A',0],'É':['E',0],'Í':['I',0],'Ó':['O',0],'Ú':['U',0],'Ý':['Y',0],'Č':['C',1],'Ď':['D',1],'Ě':['E',1],'Ň':['N',1],'Ř':['R',1],'Š':['S',1],'Ť':['T',1],'Ž':['Z',1],'Ů':['U',2]};
 function glyph(ch){if(FONT[ch])return FONT[ch];if(ACC[ch])return FONT[ACC[ch][0]];return FONT['?'];}
 function textW(s){let w=0;for(const ch of s)w+=glyph(ch)[0].length+1;return Math.max(0,w-1);}
@@ -615,12 +780,15 @@ function newGame(){
   score=0;crTotal=0;kills=0;toSpawn=0;waveDelay=0.8;boss=null;phase='wave';station=null;fixCount=0;loopN=0;stationWave=0;
   wave=startP*5;crystals=perm.start*60+[0,150,350,600,900,1300,1800][startP];
   chain=0;comboT=0;shake=0;time=0;bannerT=0;slowT=0;flashT=0;ets=1;warpT=0;
-  setBiome(startP);
+  setBiome(startP);endless=false;storyShown={};tut=tutDone?null:{st:0,t:0,dist:0,k0:0};
   setState('play');
 }
 function setState(s){
   state=s;
-  for(const id of['menu','pause','over','shop','hangar','galaxy','perm'])$(id).classList.toggle('hidden',s!==id);
+  for(const id of['menu','pause','over','shop','hangar','galaxy','perm','records'])$(id).classList.toggle('hidden',s!==id);
+  $('story').classList.add('hidden');
+  if(MUS.cur&&(s==='menu'||s==='hangar'||s==='galaxy'||s==='perm'||s==='records'))setMusic('menu');
+  musMute(s==='pause');
   if(s!=='play')$('superBtn').classList.add('hidden');
   $('hudBtns').classList.toggle('hidden',s!=='play');
   if(s==='menu')refreshMenu();
@@ -628,19 +796,27 @@ function setState(s){
 function banner(t,sub,dur){bannerText=t;bannerSub=sub||'';bannerT=dur||2.2;}
 
 /* ================= vlny ================= */
-const wib=()=>((wave-1)%5)+1;
-const stageOf=w=>Math.floor((w-1)/5);
+const wib=()=>{const r=(wave-1)%36;return r===35?5:(r%5)+1;};
+const stageOf=w=>{const r=(w-1)%36;return r===35?NB:Math.floor(r/5);};
+let endless=false;
 function nextStageLocked(){const s=stageOf(wave+1);return s<NB&&!ownedP.includes(s);}
 function nextWave(){
   if(nextStageLocked()){finishRun('path');return;}
   wave++;phase='wave';
   const st=stageOf(wave);
+  loopN=Math.floor((wave-1)/36);
   if(st>=NB){
     if(biomeIdx!==NB){setBiome(NB);warpT=2;}
     banner('FINÁLNÍ BOSS!','PÁN GALAXIE',3);spawnBoss('bFinal');toSpawn=0;snd(60,1.2,'sawtooth',0.1,0.5);vib([80,60,80,60,200]);flash('#ffe14d',0.5);
+    if(musicOn)setMusic('b7');
+    if(!endless&&!storyShown.final){storyShown.final=1;startStory('final');}
     return;
   }
-  if(st!==biomeIdx||wave===startP*5+1){if(st!==biomeIdx)warpT=2;setBiome(st);}
+  const newB=st!==biomeIdx;
+  if(newB||wave===startP*5+1){if(newB)warpT=2;setBiome(st);}
+  if(musicOn)setMusic(wib()===5?'boss':'b'+st);
+  const sk=wave===startP*5+1&&!storyShown.start?'start':(wib()===1&&!endless&&!storyShown['b'+st]?'b'+st:null);
+  if(sk){storyShown[sk]=1;if(sk==='start')storyShown['b'+st]=1;setTimeout(()=>{if(state==='play')startStory(sk);},700);}
   if(wib()===5){
     const key=biome.boss;banner('BOSS!',ED[key].name,2.6);spawnBoss(key);toSpawn=0;snd(90,0.9,'sawtooth',0.08,0.5);vib([40,40,40]);
   }else{
@@ -661,7 +837,7 @@ function spawnEnemy(key,x,y){
   e.x=e.bx=(x!==undefined)?x:rnd(sp.hw+3,GW-sp.hw-3);
   e.y=(y!==undefined)?y:-sp.hh-ri(0,10);
   e.vx=0;e.vy=0;e.fire=rnd(1,2);
-  e.hp=e.max=Math.ceil((d.hp||1)*(1+wave*0.08)*diff.hp);
+  e.hp=e.max=Math.ceil((d.hp||1)*(1+wave*0.08)*diff.hp*(1+loopN*0.3));
   switch(d.beh){
     case 'sine':e.vy=rnd(30,40);e.fire=rnd(2,5);break;
     case 'dash':e.vy=30;break;
@@ -689,7 +865,7 @@ function spawnFormation(){
 function spawnSwarm(n,x,y){for(let i=0;i<n;i++)spawnEnemy('bug',x+rnd(-16,16),y-rnd(0,26));}
 function spawnBoss(key){
   const e=spawnEnemy(key,GW/2,-30);if(!e)return;
-  e.hp=e.max=Math.round((120+wave*40+wave*wave*2.5)*diff.hp*(key==='bFinal'?2.2:1));
+  e.hp=e.max=Math.round((120+wave*40+wave*wave*2.5)*diff.hp*(key==='bFinal'?2.2:1)*(1+loopN*0.3));
   e.vy=30;e.ty=ST+(key==='bFinal'?44:38);e.fire=2;e.cnt=0;e.phase=1;boss=e;
 }
 function shootE(x,y,vx,vy,k){const b=take(ebul);if(!b)return;b.x=x;b.y=y;b.vx=vx;b.vy=vy;b.k=k||0;}
@@ -724,7 +900,7 @@ function killEnemy(e,noLoot){
     for(const l of lasers)l.on=false;
     for(const x of enemies)if(x.on&&x!==e)killEnemy(x,true);
     ringFx(e.x,e.y,160,180,'#ffffff');ringFx(e.x,e.y,110,120,RAMP[d.ramp][1]);flash('#ffffff',0.4);slowT=1.1;
-    if(e.key==='bFinal'){banner('PÁN GALAXIE PADL!','',3);endKind='win';state='dying';deadT=3;$('hudBtns').classList.add('hidden');$('superBtn').classList.add('hidden');burst(e.x,e.y,150,'gold',170,2);return;}
+    if(e.key==='bFinal'){banner('PÁN GALAXIE PADL!','',3);endKind='win';if(musicOn)setMusic('win');state='dying';deadT=3;$('hudBtns').classList.add('hidden');$('superBtn').classList.add('hidden');burst(e.x,e.y,150,'gold',170,2);return;}
     banner('BOSS PORAŽEN!','+'+Math.round(d.sc*diff.score),2.2);
     return;
   }
@@ -766,18 +942,38 @@ function die(){
   shake=0.8;state='dying';deadT=1.2;endKind='dead';$('hudBtns').classList.add('hidden');$('superBtn').classList.add('hidden');
 }
 function finishRun(kind){endKind=kind;showGameOver();}
+let LB=[];try{LB=JSON.parse(store.get('px_lb','[]'))||[];}catch(e){}
+let lastRec=null;
+function addRecord(r){LB.push(r);LB.sort((a,b)=>b.s-a.s);LB=LB.slice(0,10);store.set('px_lb',JSON.stringify(LB));lastRec=r;return LB.indexOf(r);}
+function renderRecords(){
+  const t=$('lbTable');
+  if(!LB.length){t.innerHTML='<tr><td style="text-align:center;opacity:.6">Zatím žádné hry. Zahraj si!</td></tr>';return;}
+  t.innerHTML='<tr><th>#</th><th>BODY</th><th>VLNA</th><th>LOĎ</th><th>OBTÍŽNOST</th><th>DATUM</th></tr>'+LB.map((r,i)=>{const dt=new Date(r.t);return '<tr'+(lastRec&&r.t===lastRec.t?' class="me"':'')+'><td>'+(i+1)+'</td><td><b>'+r.s+'</b></td><td>'+r.w+(r.win?' 👑':'')+(r.e?' ∞':'')+'</td><td>'+r.ship+'</td><td>'+DIFF[r.d].name.toLowerCase()+'</td><td>'+dt.getDate()+'.'+(dt.getMonth()+1)+'.</td></tr>';}).join('');
+}
+function continueEndless(){
+  endless=true;$('over').classList.add('hidden');
+  for(const e of enemies)e.on=false;for(const b of ebul)b.on=false;boss=null;
+  player.hp=player.maxHp;player.inv=2;
+  banner('NEKONEČNÝ REŽIM','NEPŘÁTELÉ SÍLÍ',3);
+  state='play';$('hudBtns').classList.remove('hidden');last=performance.now();
+  stationWave=wave;spawnStation();
+}
 function showGameOver(){
   const nb=score>best;if(nb){best=score;store.set('px_best',best);}
   if(wave>bestWave){bestWave=wave;store.set('px_bwave',bestWave);}
   let bonus=0;if(endKind==='win')bonus=1500;else if(endKind==='path')bonus=200;
   bank+=crTotal+bonus;store.set('px_bank',bank);
+  const banked=crTotal+bonus;crTotal=0;
+  const rank=addRecord({s:score,w:wave,ship:ship.name,d:diffIdx,win:endKind==='win'?1:0,e:endless?1:0,t:Date.now()});
+  if(endKind!=='win'&&musicOn)setMusic('menu');
+  $('endlessBtn').classList.toggle('hidden',endKind!=='win');
   $('overTitle').classList.toggle('hidden',endKind==='win'||endKind==='path');
   $('winTitle').classList.toggle('hidden',endKind!=='win');
   $('pathTitle').classList.toggle('hidden',endKind!=='path');
   let head='';
   if(endKind==='win')head='<b>🏆 ZACHRÁNIL JSI GALAXII!</b><br>Bonus +1500 krystalů<br>';
   else if(endKind==='path'){const nx=stageOf(wave+1);head='Porazil jsi bosse planety <b>'+biome.name+'</b>!<br>Dál nemůžeš – kup si planetu <b style="color:#b07bff">'+(BIOMES[nx]?BIOMES[nx].name:'')+'</b> v Galaxii.<br>Bonus +200 krystalů<br>';}
-  $('overStats').innerHTML=head+(nb?'<b>🏆 NOVÝ REKORD!</b><br>':'')+'Body: <b>'+score+'</b> · Vlna: <b>'+wave+'</b><br>Obtížnost: '+diff.name.toLowerCase()+' · Zničeno: <b>'+kills+'</b><br>Do banky: <b>+'+(crTotal+bonus)+'</b> krystalů (celkem '+bank+')<br><span style="opacity:.6">Rekord: '+best+'</span>';
+  $('overStats').innerHTML=head+(nb?'<b>🏆 NOVÝ REKORD!</b><br>':'')+'Body: <b>'+score+'</b> · Vlna: <b>'+wave+'</b><br>Obtížnost: '+diff.name.toLowerCase()+' · Zničeno: <b>'+kills+'</b>'+(rank>=0?'<br>🏆 <b>'+(rank+1)+'. místo</b> v žebříčku':'')+'<br>Do banky: <b>+'+banked+'</b> krystalů (celkem '+bank+')<br><span style="opacity:.6">Rekord: '+best+'</span>';
   setState('over');
 }
 
@@ -883,6 +1079,27 @@ function renderPerm(){
     box.appendChild(b);
   });
 }
+function renderSkins(){
+  let box=$('skinBox');
+  if(!box){box=document.createElement('div');box.id='skinBox';box.className='skins';const h=document.createElement('div');h.id='skinHead';$('shipCards').after(h);h.after(box);}
+  $('skinHead').innerHTML='';$('skinHead').appendChild(textCanvas('SKINY','#ff7af0',4));
+  box.innerHTML='';const S=shipById(shipId);
+  SKINS.forEach(k=>{
+    const has=ownedSk.includes(k.id),sel=k.id===skinId;
+    const b=document.createElement('button');b.className='skin'+(sel?' sel':'')+(!has&&bank<k.price?' off':'');
+    b.appendChild(sprCanvas(buildShip(S,{},k),2));
+    const n=document.createElement('span');n.textContent=k.name;b.appendChild(n);
+    const pr=document.createElement('span');pr.className='price';if(sel)pr.textContent='✔';else if(has)pr.textContent='VYBRAT';else{pr.appendChild(sprCanvas(SP.crystal,2));pr.appendChild(document.createTextNode(k.price));}
+    b.appendChild(pr);
+    b.onclick=()=>{
+      if(has){skinId=k.id;store.set('px_skin',skinId);}
+      else if(bank>=k.price){bank-=k.price;ownedSk.push(k.id);skinId=k.id;store.set('px_bank',bank);store.set('px_skins',JSON.stringify(ownedSk));store.set('px_skin',skinId);snd(880,0.2,'square',0.06,1.5);vib(30);}
+      else{snd(140,0.12,'square',0.04);return;}
+      rebuildPreviews();renderHangar();
+    };
+    box.appendChild(b);
+  });
+}
 function renderHangar(){
   showBank();
   const box=$('shipCards');box.innerHTML='';
@@ -903,6 +1120,7 @@ function renderHangar(){
     };
     box.appendChild(b);
   });
+  renderSkins();
 }
 
 /* ================= ovládání ================= */
@@ -931,13 +1149,22 @@ addEventListener('keyup',e=>{keys[e.key]=false;});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play')setState('pause');});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 function resume(){setState('play');last=performance.now();}
-$('startBtn').onclick=()=>{snd(440,0.1,'triangle',0.05);newGame();};
+let tutDone=store.get('px_tut','0')==='1',tut=null;
+$('startBtn').onclick=()=>{ensureAC();snd(440,0.1,'triangle',0.05);newGame();};
 $('hangarBtn').onclick=()=>{setState('hangar');renderHangar();};
 document.querySelectorAll('.backBtn').forEach(b=>b.onclick=()=>setState('menu'));
 $('galaxyBtn').onclick=()=>{setState('galaxy');renderGalaxy();};
 $('permBtn').onclick=()=>{setState('perm');renderPerm();};
 $('superBtn').addEventListener('pointerdown',e=>{e.stopPropagation();activateSuper();});
 $('againBtn').onclick=()=>newGame();
+$('endlessBtn').onclick=continueEndless;
+$('lbBtn').onclick=()=>{setState('records');renderRecords();};
+$('tutBtn').onclick=()=>{store.set('px_tut','0');tutDone=false;snd(660,0.1,'triangle',0.05);$('tutBtn').textContent='✔ NÁVOD ZAPNUT';};
+const musLbl=()=>{$('musBtn').textContent=$('musBtn2').textContent='♫ HUDBA: '+(musicOn?'ZAP':'VYP');};musLbl();
+$('musBtn').onclick=$('musBtn2').onclick=()=>{musicOn=!musicOn;store.set('px_mus',musicOn?'1':'0');musLbl();musMute(state==='pause');if(musicOn&&!MUS.cur)setMusic('menu');};
+$('stNext').onclick=()=>storyNext(false);$('stSkip').onclick=()=>storyNext(true);
+$('lbTitle').appendChild(textCanvas('REKORDY','#ffe14d',6));
+document.addEventListener('pointerdown',()=>{if(musicOn&&!MUS.cur&&state==='menu')setMusic('menu');},{once:true});
 $('menuBtn').onclick=()=>setState('menu');
 $('quitBtn').onclick=()=>setState('menu');
 $('resumeBtn').onclick=resume;
@@ -1013,7 +1240,7 @@ function update(dt){
   if(bannerT>0)bannerT-=dt;
   for(const p of parts){if(!p.on)continue;p.life-=dt;if(p.life<=0){p.on=false;continue;}p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=0.95;p.vy*=0.95;}
   updateAmb(dt);
-  if(state==='dying'){deadT-=dt;if(deadT<=0)showGameOver();}
+  if(state==='dying'){deadT-=dt;if(deadT<=0){if(endKind==='win'&&!endless&&!storyShown.win){storyShown.win=1;startStory('win',showGameOver);}else showGameOver();}}
   if(state==='dock'||state==='undock')updateDock(dt);
   if(state!=='play'&&state!=='dying'&&state!=='dock'&&state!=='undock')return;
   const alive=state==='play';
@@ -1036,6 +1263,12 @@ function update(dt){
         for(const b of ebul)if(b.on&&Math.abs(b.x-ox)<6&&Math.abs(b.y-oy)<6){b.on=false;}
         if(Math.random()<0.5){const pp=take(parts);if(pp){pp.x=ox;pp.y=oy;pp.vx=rnd(-10,10);pp.vy=rnd(-10,10);pp.life=pp.max=0.3;pp.ramp=RAMP.fire;pp.sz=1;}}}}
     }
+    if(tut){tut.t+=dt;
+      if(tut.st===0){tut.dist+=Math.abs(p.tx-(tut.lx??p.tx))+Math.abs(p.ty-(tut.ly??p.ty));tut.lx=p.tx;tut.ly=p.ty;if(tut.dist>70){tut.st=1;tut.k0=kills;snd(880,0.1,'triangle',0.05,1.5);}}
+      else if(tut.st===1){if(kills>=tut.k0+3){tut.st=2;snd(880,0.1,'triangle',0.05,1.5);}}
+      else if(tut.st===2){if(crTotal>=5){tut.st=3;tut.t=0;snd(880,0.1,'triangle',0.05,1.5);}}
+      else if(tut.st===3){if(tut.t>4.5)tut.st=4;}
+      else if(tut.st===4){if(p.spT>0){tut=null;tutDone=true;store.set('px_tut','1');}}}
     const wantS=p.sp>=1&&p.spT<=0;if(wantS!==superShown){superShown=wantS;$('superBtn').classList.toggle('hidden',!wantS);if(wantS){snd(990,0.2,'square',0.05,1.5);vib(20);}}
     if(biomeIdx===6||(boss&&boss.on&&boss.key==='bVoid')){const g=(GW/2-p.tx)*(boss&&boss.key==='bVoid'?0.7:0.35)*dt;p.tx+=g;psx+=g;}
     if(phase!=='station')playerFire(dt);else p.beamOn=false;
@@ -1374,6 +1607,17 @@ function draw(){
       ctx.fillStyle=OUT;ctx.fillRect(mx-1,my-1,mw+2,5);ctx.fillStyle='#2a2010';ctx.fillRect(mx,my,mw,3);
       ctx.fillStyle=p.spT>0?'#ff7af0':(p.sp>=1&&Math.floor(time*6)%2?'#ffffff':'#ffe14d');ctx.fillRect(mx,my,Math.round(mw*fill),3);
       drawText(ctx,p.sp>=1&&p.spT<=0?'SUPER!':'',mx,my-8,1,'#ffe14d','l');}
+    if(tut&&state==='play'){
+      const ty=Math.round(IH*0.6),bl=Math.floor(time*3)%2===0;let a='',b='';
+      if(phase==='station'&&station&&!station.leaving){a='PŘILEŤ KE STANICI';b='A KUP SI VYLEPŠENÍ';}
+      else if(tut.st===0){a='TÁHNI PRSTEM';b='KDEKOLI PO OBRAZOVCE';const hx=Math.round(GW/2+Math.sin(time*3)*24);
+        ctx.fillStyle='#fff';ctx.fillRect(hx,ty+22,2,6);ctx.fillRect(hx-1,ty+26,5,5);ctx.fillStyle='#41e6ff';ctx.fillRect(hx-6,ty+33,14,1);}
+      else if(tut.st===1){a='LOĎ STŘÍLÍ SAMA!';b='ZNIČ 3 NEPŘÁTELE';}
+      else if(tut.st===2){a='SBÍREJ ŽLUTÉ KRYSTALY';b='KUPUJEŠ ZA NĚ VYLEPŠENÍ';}
+      else if(tut.st===3){a='UKAZATEL VLEVO DOLE';b='NABÍJÍ SUPERSCHOPNOST';if(bl)drawText(ctx,'<',42,IH-14,1,'#ffe14d','l');}
+      else if(tut.st===4&&p.sp>=1){a='ZMÁČKNI TLAČÍTKO';b='VPRAVO DOLE >';}
+      if(a){drawText(ctx,a,GW/2,ty,1,bl?'#ffffff':'#41e6ff','c');drawText(ctx,b,GW/2,ty+10,1,'#ffe14d','c');}
+    }
     if(state==='dock'&&dockT>1.3){if(Math.floor(time*4)%2===0)drawText(ctx,'PŘIPOJENO',GW/2,Math.round(station.y)-SP.station.hh-12,1,'#5dff8a','c');}
     if(bannerT>0&&!(bannerT<0.6&&Math.floor(bannerT*10)%2)){
       const by=Math.round(IH*0.45);
@@ -1414,7 +1658,7 @@ function loop(now){
 let rT=0;addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(resize,120);});
 resize();setState('menu');requestAnimationFrame(loop);
 
-if(location.hash==='#debug')window.__dbg={spawnEnemy,spawnBoss,spawnStation,nextWave,setWave:w=>{wave=w;},setBiome,lv:()=>lv,state:()=>state,give:n=>{crystals+=n;},bank:n=>{bank+=n;},wave:()=>wave,god:()=>{player.hp=99;player.maxHp=99;},clear:()=>{toSpawn=0;},st:()=>station&&[station.x,station.y],pl:()=>[player.x,player.y,player.hp],dock:()=>{if(station){const D=dockPos();player.x=player.tx=D.x;player.y=player.ty=D.y+6;}},setShip:id=>{shipId=id;},upg:o=>{Object.assign(lv,o);shipSpr=buildShip(ship,lv);},ship:id=>{ship=shipById(id);shipSpr=buildShip(ship,lv);player.spT=0;},fillSuper:()=>{player.sp=1;},final:()=>{for(const e of enemies)e.on=false;wave=35;stationWave=35;ownedP=[0,1,2,3,4,5,6];nextWave();},killBoss:()=>{if(boss){boss.hp=1;hitEnemy(boss,5);}}};
+if(location.hash==='#debug')window.__dbg={spawnEnemy,spawnBoss,spawnStation,nextWave,setWave:w=>{wave=w;},setBiome,lv:()=>lv,state:()=>state,give:n=>{crystals+=n;},bank:n=>{bank+=n;},wave:()=>wave,god:()=>{player.hp=99;player.maxHp=99;},clear:()=>{toSpawn=0;},st:()=>station&&[station.x,station.y],pl:()=>[player.x,player.y,player.hp],dock:()=>{if(station){const D=dockPos();player.x=player.tx=D.x;player.y=player.ty=D.y+6;}},setShip:id=>{shipId=id;},upg:o=>{Object.assign(lv,o);shipSpr=buildShip(ship,lv);},ship:id=>{ship=shipById(id);shipSpr=buildShip(ship,lv);player.spT=0;},fillSuper:()=>{player.sp=1;},final:()=>{for(const e of enemies)e.on=false;wave=35;stationWave=35;ownedP=[0,1,2,3,4,5,6];nextWave();},killBoss:()=>{if(boss){boss.hp=1;hitEnemy(boss,5);}},mus:()=>MUS.cur,tut:()=>tut&&tut.st,story:()=>!!storyQ};
 /* ================= offline režim (funguje, když je hra nahraná na webu) ================= */
 try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&window.self===window.top){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update();}catch(e){}}).catch(()=>{});let reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloaded||state==='play')return;reloaded=true;location.reload();});}}catch(e){}
 })();
