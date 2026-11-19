@@ -1965,14 +1965,14 @@ function spawnPerson(x){const cols=['#ff3b4e','#41e6ff','#5dff8a','#ffe14d','#ff
 function spawnCar(){const cols=['#ff3b4e','#2a8ad9','#ffe14d','#5dff8a','#ff8a2a','#ffffff','#b07bff'];const d=Math.random()<0.5?-1:1;C.cars.push({x:rnd(0,C.W),y:0,vx:0,vy:0,dir:d,sp:rnd(22,38),col:pick(cols),air:false,burn:0,lane:d>0?1:0});}
 const groundAt=x=>{const xi=Math.max(0,Math.min(C.W-1,Math.round(x)));return C.gy-C.rub[xi];};
 function bAt(px,py){for(const b of C.B){const bx=b.x,by=C.gy-b.h*CS;if(px<bx||px>=bx+b.w*CS||py<by||py>=C.gy)continue;const c=Math.floor((px-bx)/CS),r=Math.floor((py-by)/CS);const i=r*b.w+c;if(b.cells[i]&&r>=b.h-b.grow)return {b,i,c,r};}return null;}
-function addDeb(x,y,vx,vy,col){if(C.deb.length>900){burst(x-OX,y,1,'grey',20,1);return;}C.deb.push({x,y,vx,vy,col,bn:0});}
+function addDeb(x,y,vx,vy,col){if(C.deb.length>320){if(Math.random()<0.25)burst(x-OX,y,1,'grey',20,1);return;}C.deb.push({x,y,vx,vy,col,bn:0,t:0});}
 function cellCol(b,v){const S=CSTY[b.sty];return v===1?S.w:v===3?S.t:v===2?S.win:v===4?'#2a1a14':'#7a7a8a';}
 function blast(x,y,r,pow,noFire){
   const r2=r*r;
   for(const b of C.B){const bx=b.x,by=C.gy-b.h*CS;if(x+r<bx||x-r>bx+b.w*CS||y+r<by||y-r>C.gy)continue;
     let hit=false;
     for(let rr=0;rr<b.h;rr++)for(let cc=0;cc<b.w;cc++){const i=rr*b.w+cc;const v=b.cells[i];if(!v)continue;const px=bx+cc*CS+1,py=by+rr*CS+1,dx=px-x,dy=py-y,d2=dx*dx+dy*dy;
-      if(d2<r2){b.cells[i]=0;b.burn[i]=0;hit=true;const d=Math.sqrt(d2)||1,k=pow*(1-d/r)+20;if(Math.random()<0.75)addDeb(px,py,dx/d*k+rnd(-20,20),dy/d*k-rnd(20,60),cellCol(b,v));}
+      if(d2<r2){b.cells[i]=0;b.burn[i]=0;hit=true;const d=Math.sqrt(d2)||1,k=pow*(1-d/r)+20;if(Math.random()<0.45)addDeb(px,py,dx/d*k+rnd(-20,20),dy/d*k-rnd(20,60),cellCol(b,v));}
       else if(!noFire&&d2<r2*1.6&&Math.random()<0.08&&!b.burn[i])b.burn[i]=0.01;}
     if(hit){b.dirty=true;b.support=true;}}
   // sutiny v kráteru
@@ -1988,7 +1988,8 @@ function checkSupport(b){
   for(let c=0;c<b.w;c++){const i=(b.h-1)*b.w+c;if(b.cells[i]){seen[i]=1;st.push(i);}}
   while(st.length){const i=st.pop(),r=(i/b.w)|0,c=i%b.w;const nb=[r>0?i-b.w:-1,r<b.h-1?i+b.w:-1,c>0?i-1:-1,c<b.w-1?i+1:-1];for(const j of nb){if(j>=0&&!seen[j]&&b.cells[j]){seen[j]=1;st.push(j);}}}
   const bx=b.x,by=C.gy-b.h*CS;let fell=0;
-  for(let i=0;i<n;i++){if(b.cells[i]&&!seen[i]){const r=(i/b.w)|0,c=i%b.w;if(fell%2===0||C.deb.length<500)addDeb(bx+c*CS+1,by+r*CS+1,rnd(-6,6),rnd(0,15),cellCol(b,b.cells[i]));b.cells[i]=0;b.burn[i]=0;fell++;}}
+  for(let i=0;i<n;i++){if(b.cells[i]&&!seen[i]){const r=(i/b.w)|0,c=i%b.w;if(fell%3===0)addDeb(bx+c*CS+1,by+r*CS+1,rnd(-6,6),rnd(0,15),cellCol(b,b.cells[i]));b.cells[i]=0;b.burn[i]=0;fell++;}}
+  if(fell||true){let cnt=0;for(const v of b.cells)if(v)cnt++;if(cnt<b.w*b.h*0.2&&!b.fade&&!b.growing)b.fade=1;}
   if(fell){b.dirty=true;if(fell>20){shake=Math.max(shake,0.35);snd(60,0.8,'sawtooth',0.08,0.4);burst(bx+b.w-OX,C.gy-4,20,'grey',60,2);}}
   b.support=false;
 }
@@ -2132,6 +2133,11 @@ function cityUpdate(dt){
   const G=C.g*C.gmul;
   // zemětřesení
   if(C.quake>0){C.quake-=dt;shake=Math.max(shake,0.4);if(Math.random()<dt*12){const b=pick(C.B);if(b){const i=ri(0,b.w*b.h-1);if(b.cells[i]){const r=(i/b.w)|0,c=i%b.w;addDeb(b.x+c*CS+1,C.gy-b.h*CS+r*CS+1,rnd(-20,20),0,cellCol(b,b.cells[i]));b.cells[i]=0;b.dirty=true;b.support=true;}}}}
+  // sutiny pomalu mizí
+  C.rubT=(C.rubT||0)-dt;
+  if(C.rubT<=0){C.rubT=0.05;const g=C.rubCan.getContext('2d');for(let k=0;k<14;k++){const xi=ri(0,C.W-1);if(C.rub[xi]>0){const top=Math.round(C.gy-C.rub[xi]);g.clearRect(xi,top-1,1,2);C.rub[xi]=Math.max(0,C.rub[xi]-1);}}}
+  // zbytky zničených baráků mizí
+  for(let k=C.B.length-1;k>=0;k--){const b=C.B[k];if(b.fade){b.fade-=dt*0.5;if(b.fade<=0){C.B.splice(k,1);burst(b.x+b.w-OX,C.gy-3,10,'grey',40,2);}}}
   // budovy: růst, oheň, podpora
   for(const b of C.B){
     if(b.growing){b.grow=Math.min(b.h,b.grow+dt*40);b.dirty=true;if(Math.random()<0.4)burst(b.x+rnd(0,b.w*CS)-OX,C.gy-1,1,'grey',20,1);if(b.grow>=b.h){b.growing=false;b.grow=b.h;}}
@@ -2152,7 +2158,7 @@ function cityUpdate(dt){
     }
   }
   // sutiny
-  for(let i=C.deb.length-1;i>=0;i--){const d=C.deb[i];
+  for(let i=C.deb.length-1;i>=0;i--){const d=C.deb[i];d.t+=dt;if(d.t>7){C.deb.splice(i,1);continue;}
     d.vy+=G*dt;d.vx+=C.wind*dt*0.6;d.vx*=0.995;
     if(C.waterT>0&&d.y>C.gy-C.water){d.vy-=G*dt*1.3;d.vy*=0.9;d.vx*=0.95;}
     d.x+=d.vx*dt;d.y+=d.vy*dt;
@@ -2258,7 +2264,7 @@ function cityDraw(){
   // mraky
   ctx.fillStyle=C.night?'#2a2050':'#ffffff';for(const cl of C.clouds){const x=Math.round(cl.x),y=Math.round(cl.y);ctx.fillRect(x,y,cl.w,4);ctx.fillRect(x+3,y-3,cl.w-8,3);ctx.fillRect(x+6,y-5,cl.w-16,2);}
   // budovy
-  for(const b of C.B){if(b.dirty)bakeB(b);ctx.drawImage(b.can,b.x,C.gy-b.h*CS);
+  for(const b of C.B){if(b.dirty)bakeB(b);if(b.fade)ctx.globalAlpha=Math.max(0,b.fade);ctx.drawImage(b.can,b.x,C.gy-b.h*CS);ctx.globalAlpha=1;
     for(let i=0;i<b.burn.length;i++){if(!b.burn[i])continue;const r=(i/b.w)|0,c=i%b.w;const x=b.x+c*CS,y=C.gy-b.h*CS+r*CS;ctx.fillStyle=((i+Math.floor(C.t*12))%3===0)?'#ffe14d':((i+Math.floor(C.t*8))%2?'#ff8a2a':'#ff3b4e');ctx.fillRect(x,y-(Math.random()<0.3?1:0),CS,CS);}}
   // silnice
   const gy=C.gy;ctx.fillStyle='#2a2e44';ctx.fillRect(0,gy,C.W,14);ctx.fillStyle='#5a6080';ctx.fillRect(0,gy,C.W,1);
