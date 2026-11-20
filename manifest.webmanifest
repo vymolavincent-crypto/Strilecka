@@ -1,6 +1,7 @@
 {
-  "name": "Neonový nájezd",
-  "short_name": "Neon Nájezd",
+  "name": "Herna",
+  "short_name": "Herna",
+  "description": "Moje offline hry",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",
