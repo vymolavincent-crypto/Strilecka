@@ -855,7 +855,7 @@ buildPills();
 let lv={};
 const rateMul=()=>Math.pow(0.75,lv.rate)*Math.pow(0.9,pk.speedB||0)*(player&&player.pu&&player.pu.rapid>0?0.5:1);
 const dmgMul=()=>(1+0.6*lv.dmg)*(1+0.1*perm.dmg);
-const magR=()=>(player&&player.pu&&player.pu.magnet>0)?999:[9,26,44,66][lv.mag]+perm.mag*12;
+const magR=()=>(player&&player.pu&&player.pu.magnet>0)?999:[18,32,50,72][lv.mag]+perm.mag*12;
 const mslInt=()=>[0,1.4,1.0,0.7][lv.msl];
 const shdInt=()=>[0,16,11,7][lv.shd];
 const plasmaInt=()=>[0,2.2,1.4][lv.plasma];
@@ -1145,8 +1145,10 @@ function showGameOver(){
   const nb=score>best;if(nb){best=score;store.set('px_best',best);}
   if(wave>bestWave){bestWave=wave;store.set('px_bwave',bestWave);}
   let bonus=0;if(endKind==='win')bonus=1500;else if(endKind==='path')bonus=200;
-  bank+=crTotal+bonus;store.set('px_bank',bank);
-  const banked=crTotal+bonus;crTotal=0;mis('wave',wave,1);saveDaily();
+  const wavesDone=Math.max(0,wave-startP*5-1);
+  const waveB=Math.round(wavesDone*12*diff.cr),bossB=Math.round(heat*150*diff.cr);
+  bank+=crTotal+bonus+waveB+bossB;store.set('px_bank',bank);
+  const picked=crTotal,banked=crTotal+bonus+waveB+bossB;crTotal=0;mis('wave',wave,1);saveDaily();
   const rank=addRecord({s:score,w:wave,ship:ship.name,d:diffIdx,win:endKind==='win'?1:0,e:endless?1:0,t:Date.now()});
   if(endKind!=='win'&&musicOn)setMusic('menu');
   $('endlessBtn').classList.toggle('hidden',endKind!=='win');
@@ -1156,7 +1158,7 @@ function showGameOver(){
   let head='';
   if(endKind==='win')head='<b>🏆 ZACHRÁNIL JSI GALAXII!</b><br>Bonus +1500 krystalů<br>';
   else if(endKind==='path'){const nx=stageOf(wave+1);head='Porazil jsi bosse planety <b>'+biome.name+'</b>!<br>Dál nemůžeš – kup si planetu <b style="color:#b07bff">'+(BIOMES[nx]?BIOMES[nx].name:'')+'</b> v Galaxii.<br>Bonus +200 krystalů<br>';}
-  $('overStats').innerHTML=head+(nb?'<b>🏆 NOVÝ REKORD!</b><br>':'')+'Body: <b>'+score+'</b> · Vlna: <b>'+wave+'</b><br>Obtížnost: '+diff.name.toLowerCase()+' · Zničeno: <b>'+kills+'</b>'+(rank>=0?'<br>🏆 <b>'+(rank+1)+'. místo</b> v žebříčku':'')+'<br>Do banky: <b>+'+banked+'</b> krystalů (celkem '+bank+')<br><span style="opacity:.6">Rekord: '+best+'</span>';
+  $('overStats').innerHTML=head+(nb?'<b>🏆 NOVÝ REKORD!</b><br>':'')+'Body: <b>'+score+'</b> · Vlna: <b>'+wave+'</b><br>Obtížnost: '+diff.name.toLowerCase()+' · Zničeno: <b>'+kills+'</b>'+(rank>=0?'<br>🏆 <b>'+(rank+1)+'. místo</b> v žebříčku':'')+'<br>Sebrané krystaly: <b>+'+picked+'</b><br>Odměna za vlny ('+wavesDone+'×12): <b>+'+waveB+'</b>'+(heat?'<br>Odměna za bosse ('+heat+'×150): <b>+'+bossB+'</b>':'')+'<br>Do banky celkem: <b>+'+banked+'</b> krystalů (celkem '+bank+')<br><span style="opacity:.6">Rekord: '+best+'</span>';
   setState('over');
 }
 
@@ -1663,7 +1665,7 @@ function update(dt){
   for(const it of items){
     if(!it.on)continue;it.t+=dt;
     const dx=p.x-it.x,dy=p.y-it.y,dd=Math.hypot(dx,dy)||1;
-    if(alive&&(it.suck||dd<mr))it.suck=true;
+    if(alive&&(it.suck||dd<mr||(it.k===0&&it.t>1.3)))it.suck=true;
     if(it.suck&&alive){const v=Math.min(260,120+it.t*60);it.x+=dx/dd*v*dt;it.y+=dy/dd*v*dt;}
     else{it.vx*=0.94;it.vy+=(30-it.vy)*dt*2;it.x+=it.vx*dt;it.y+=it.vy*dt;}
     if(it.y>IH+8||((it.k===0||it.k===3)&&it.t>12&&!it.suck)){it.on=false;continue;}
@@ -2965,7 +2967,7 @@ function loop(now){
 let rT=0;addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{if(state==='city'&&document.activeElement===$('cityIn'))return;const ow=IW,oh=IH;resize();if(state==='city'&&(ow!==IW||oh!==IH))cityInit();},150);});
 resize();setState('menu');requestAnimationFrame(loop);
 
-if(location.hash==='#debug')window.__dbg={spawnEnemy,spawnBoss,spawnStation,nextWave,setWave:w=>{wave=w;},setBiome,lv:()=>lv,state:()=>state,give:n=>{crystals+=n;},bank:n=>{bank+=n;},wave:()=>wave,god:()=>{player.hp=99;player.maxHp=99;},clear:()=>{toSpawn=0;},st:()=>station&&[station.x,station.y],pl:()=>[player.x,player.y,player.hp],dock:()=>{if(station){const D=dockPos();player.x=player.tx=D.x;player.y=player.ty=D.y+6;}},setShip:id=>{shipId=id;},upg:o=>{Object.assign(lv,o);shipSpr=buildShip(ship,lv);},ship:id=>{ship=shipById(id);shipSpr=buildShip(ship,lv);player.spT=0;},fillSuper:()=>{player.sp=1;},final:()=>{for(const e of enemies)e.on=false;wave=35;stationWave=35;ownedP=[0,1,2,3,4,5,6];curSt=NB-1;wIn=5;nextWave();},stg:()=>[wave,curSt,wIn,loopN,biomeIdx,heat],nw:()=>{for(const e of enemies)e.on=false;boss=null;nextWave();},killBoss:()=>{if(boss){boss.hp=1;hitEnemy(boss,5);}},mus:()=>MUS.cur,lvup:()=>{pendLv++;},pu:i=>applyPU(PU[i]),pk:o=>Object.assign(pk,o),treasure:()=>spawnEnemy('treasure'),event:k=>{eventK=k;eventT=0.01;},elite:k=>{const e=spawnEnemy(k);if(e){e.elite=true;e.hp=e.max*=3;}},daily:()=>DY,city:t=>runText(t),fxk:()=>C&&C.fx.map(f=>f.k+':'+Math.round(f.x)+(f.t!==undefined?'/'+f.t.toFixed(1):'')).join(' ')+' t='+C.t.toFixed(1),C:()=>C&&{deb:C.deb.length,B:C.B.length,ppl:C.ppl.length,fx:C.fx.length},tut:()=>tut&&tut.st,story:()=>!!storyQ};
+if(location.hash==='#debug')window.__dbg={spawnEnemy,spawnBoss,spawnStation,nextWave,setWave:w=>{wave=w;},setBiome,lv:()=>lv,state:()=>state,give:n=>{crystals+=n;},bank:n=>{bank+=n;},wave:()=>wave,god:()=>{player.hp=99;player.maxHp=99;},clear:()=>{toSpawn=0;},st:()=>station&&[station.x,station.y],pl:()=>[player.x,player.y,player.hp],dock:()=>{if(station){const D=dockPos();player.x=player.tx=D.x;player.y=player.ty=D.y+6;}},setShip:id=>{shipId=id;},upg:o=>{Object.assign(lv,o);shipSpr=buildShip(ship,lv);},ship:id=>{ship=shipById(id);shipSpr=buildShip(ship,lv);player.spT=0;},fillSuper:()=>{player.sp=1;},final:()=>{for(const e of enemies)e.on=false;wave=35;stationWave=35;ownedP=[0,1,2,3,4,5,6];curSt=NB-1;wIn=5;nextWave();},stg:()=>[wave,curSt,wIn,loopN,biomeIdx,heat,crTotal],die:()=>{die();},nw:()=>{for(const e of enemies)e.on=false;boss=null;nextWave();},killBoss:()=>{if(boss){boss.hp=1;hitEnemy(boss,5);}},mus:()=>MUS.cur,lvup:()=>{pendLv++;},pu:i=>applyPU(PU[i]),pk:o=>Object.assign(pk,o),treasure:()=>spawnEnemy('treasure'),event:k=>{eventK=k;eventT=0.01;},elite:k=>{const e=spawnEnemy(k);if(e){e.elite=true;e.hp=e.max*=3;}},daily:()=>DY,city:t=>runText(t),fxk:()=>C&&C.fx.map(f=>f.k+':'+Math.round(f.x)+(f.t!==undefined?'/'+f.t.toFixed(1):'')).join(' ')+' t='+C.t.toFixed(1),C:()=>C&&{deb:C.deb.length,B:C.B.length,ppl:C.ppl.length,fx:C.fx.length},tut:()=>tut&&tut.st,story:()=>!!storyQ};
 /* ================= offline režim (funguje, když je hra nahraná na webu) ================= */
 try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&window.self===window.top){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update();}catch(e){}}).catch(()=>{});let reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloaded||state==='play')return;reloaded=true;location.reload();});}}catch(e){}
 })();
