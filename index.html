@@ -878,7 +878,7 @@ function newGame(){
   pk={};xp=0;plv=1;pendLv=0;treasureT=0;eventT=0;eventN=0;for(const f of fts)f.on=false;
   player={pu:{rapid:0,triple:0,magnet:0,double:0},vk:0,chT:2,rearT:0,x:GW/2,y:IH*0.8,tx:GW/2,ty:IH*0.8,hp:mh,maxHp:mh,inv:1.5,fireT:0,canT:0,mslT:1,plT:1,shield:false,shdT:0,dt:0,beamT:0,beamY:0,beamOn:false,revive:ship.id==='fenix',drones:[{x:GW/2,y:IH},{x:GW/2,y:IH}],sp:0,spT:0,swarm:0,god:0};
   score=0;crTotal=0;kills=0;toSpawn=0;waveDelay=0.8;boss=null;phase='wave';station=null;fixCount=0;loopN=0;stationWave=0;
-  wave=startP*5;crystals=perm.start*60+[0,150,350,600,900,1300,1800][startP];
+  wave=startP*5;curSt=-1;wIn=5;crystals=perm.start*60+[0,150,350,600,900,1300,1800][startP];
   chain=0;comboT=0;shake=0;time=0;bannerT=0;slowT=0;flashT=0;ets=1;warpT=0;
   setBiome(startP);endless=false;storyShown={};tut=tutDone?null:{st:0,t:0,dist:0,k0:0};
   setState('play');
@@ -898,7 +898,8 @@ function setState(s){
 function banner(t,sub,dur){bannerText=t;bannerSub=sub||'';bannerT=dur||2.2;}
 
 /* ================= vlny ================= */
-const wib=()=>{const r=(wave-1)%36;return r===35?5:(r%5)+1;};
+let curSt=-1,wIn=5;
+const wib=()=>wIn;
 const stageOf=w=>{const r=(w-1)%36;return r===35?NB:Math.floor(r/5);};
 let endless=false;
 let xp=0,plv=1,pendLv=0,treasureT=0,eventT=0,eventK='',eventN=0,eventI=0;
@@ -906,13 +907,19 @@ const xpNeed=()=>12+(plv-1)*10;
 const fts=pool(30,()=>({on:false,x:0,y:0,t:0,s:'',c:'#fff',sc:1}));
 function addFt(x,y,txt,col,sc){const f=take(fts);if(!f)return;f.x=x;f.y=y;f.t=0;f.s=String(txt);f.c=col||'#fff';f.sc=sc||1;}
 const bolts=pool(12,()=>({on:false,pts:[],t:0}));
-function nextStageLocked(){const s=stageOf(wave+1);return s<NB&&!ownedP.includes(s);}
+function nextStageLocked(){return false;}
 function nextWave(){
-  if(nextStageLocked()){finishRun('path');return;}
   wave++;phase='wave';
-  const st=stageOf(wave);
-  loopN=Math.floor((wave-1)/36);
-  if(st>=NB){
+  let loopMsg=null;
+  if(curSt<0){curSt=startP;wIn=1;}
+  else if(wIn>=5){
+    let nx=curSt+1;
+    if(curSt>=NB){nx=0;loopN++;loopMsg=['DALŠÍ KOLO!','NEPŘÁTELÉ SÍLÍ · KOLO '+(loopN+1)];}
+    else if(nx<NB&&!ownedP.includes(nx)){nx=startP;loopN++;loopMsg=['DALŠÍ KOLO!','KOLO '+(loopN+1)+' · NEPŘÁTELÉ SÍLÍ'];}
+    curSt=nx;wIn=1;
+  }else wIn++;
+  const st=curSt;
+  if(st>=NB){wIn=5;
     if(biomeIdx!==NB){setBiome(NB);warpT=2;}
     banner('FINÁLNÍ BOSS!','PÁN GALAXIE',3);spawnBoss('bFinal');toSpawn=0;snd(60,1.2,'sawtooth',0.1,0.5);vib([80,60,80,60,200]);flash('#ffe14d',0.5);
     if(musicOn)setMusic('b7');
@@ -927,7 +934,8 @@ function nextWave(){
   if(wib()===5){
     const key=biome.boss;banner('BOSS!',ED[key].name,2.6);spawnBoss(key);toSpawn=0;snd(90,0.9,'sawtooth',0.08,0.5);vib([40,40,40]);
   }else{
-    if(wib()===1)banner(biome.name,'VLNA '+wave,2.8);else banner('VLNA '+wave,'',2);
+    if(loopMsg){banner(loopMsg[0],loopMsg[1],3);flash('#41e6ff',0.3);snd(500,0.5,'square',0.05,2);setTimeout(()=>{if(state==='play'&&!ownedP.includes(Math.min(NB-1,startP+1))&&startP+1<NB)addFt(GW/2,IH*0.55,'KUP DALŠÍ PLANETU V GALAXII','#b07bff');},2600);}
+    else if(wib()===1)banner(biome.name,'VLNA '+wave,2.8);else banner('VLNA '+wave,'',2);
     toSpawn=Math.min(44,6+wave*2);spawnT=1.5;
     if(wave>=2&&Math.random()<0.35)treasureT=rnd(4,14);
     if(wave>=3&&Math.random()<0.3){eventT=rnd(5,12);eventK=Math.random()<0.5?'meteor':'rain';}
@@ -1510,7 +1518,7 @@ function update(dt){
         }
       }else if(!boss){
         let any=false;for(const e of enemies)if(e.on){any=true;break;}
-        if(!any){waveDelay-=dt;if(waveDelay<=0){waveDelay=1.4;if(wave>0&&(wib()===3||(wib()===5&&!nextStageLocked()))&&stationWave!==wave){stationWave=wave;spawnStation();}else nextWave();}}
+        if(!any){waveDelay-=dt;if(waveDelay<=0){waveDelay=1.4;if(wave>0&&(wib()===3||wib()===5)&&stationWave!==wave){stationWave=wave;spawnStation();}else nextWave();}}
       }
     }
   }else p.beamOn=false;
@@ -2956,7 +2964,7 @@ function loop(now){
 let rT=0;addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{if(state==='city'&&document.activeElement===$('cityIn'))return;const ow=IW,oh=IH;resize();if(state==='city'&&(ow!==IW||oh!==IH))cityInit();},150);});
 resize();setState('menu');requestAnimationFrame(loop);
 
-if(location.hash==='#debug')window.__dbg={spawnEnemy,spawnBoss,spawnStation,nextWave,setWave:w=>{wave=w;},setBiome,lv:()=>lv,state:()=>state,give:n=>{crystals+=n;},bank:n=>{bank+=n;},wave:()=>wave,god:()=>{player.hp=99;player.maxHp=99;},clear:()=>{toSpawn=0;},st:()=>station&&[station.x,station.y],pl:()=>[player.x,player.y,player.hp],dock:()=>{if(station){const D=dockPos();player.x=player.tx=D.x;player.y=player.ty=D.y+6;}},setShip:id=>{shipId=id;},upg:o=>{Object.assign(lv,o);shipSpr=buildShip(ship,lv);},ship:id=>{ship=shipById(id);shipSpr=buildShip(ship,lv);player.spT=0;},fillSuper:()=>{player.sp=1;},final:()=>{for(const e of enemies)e.on=false;wave=35;stationWave=35;ownedP=[0,1,2,3,4,5,6];nextWave();},killBoss:()=>{if(boss){boss.hp=1;hitEnemy(boss,5);}},mus:()=>MUS.cur,lvup:()=>{pendLv++;},pu:i=>applyPU(PU[i]),pk:o=>Object.assign(pk,o),treasure:()=>spawnEnemy('treasure'),event:k=>{eventK=k;eventT=0.01;},elite:k=>{const e=spawnEnemy(k);if(e){e.elite=true;e.hp=e.max*=3;}},daily:()=>DY,city:t=>runText(t),fxk:()=>C&&C.fx.map(f=>f.k+':'+Math.round(f.x)+(f.t!==undefined?'/'+f.t.toFixed(1):'')).join(' ')+' t='+C.t.toFixed(1),C:()=>C&&{deb:C.deb.length,B:C.B.length,ppl:C.ppl.length,fx:C.fx.length},tut:()=>tut&&tut.st,story:()=>!!storyQ};
+if(location.hash==='#debug')window.__dbg={spawnEnemy,spawnBoss,spawnStation,nextWave,setWave:w=>{wave=w;},setBiome,lv:()=>lv,state:()=>state,give:n=>{crystals+=n;},bank:n=>{bank+=n;},wave:()=>wave,god:()=>{player.hp=99;player.maxHp=99;},clear:()=>{toSpawn=0;},st:()=>station&&[station.x,station.y],pl:()=>[player.x,player.y,player.hp],dock:()=>{if(station){const D=dockPos();player.x=player.tx=D.x;player.y=player.ty=D.y+6;}},setShip:id=>{shipId=id;},upg:o=>{Object.assign(lv,o);shipSpr=buildShip(ship,lv);},ship:id=>{ship=shipById(id);shipSpr=buildShip(ship,lv);player.spT=0;},fillSuper:()=>{player.sp=1;},final:()=>{for(const e of enemies)e.on=false;wave=35;stationWave=35;ownedP=[0,1,2,3,4,5,6];curSt=NB-1;wIn=5;nextWave();},stg:()=>[wave,curSt,wIn,loopN,biomeIdx],nw:()=>{for(const e of enemies)e.on=false;boss=null;nextWave();},killBoss:()=>{if(boss){boss.hp=1;hitEnemy(boss,5);}},mus:()=>MUS.cur,lvup:()=>{pendLv++;},pu:i=>applyPU(PU[i]),pk:o=>Object.assign(pk,o),treasure:()=>spawnEnemy('treasure'),event:k=>{eventK=k;eventT=0.01;},elite:k=>{const e=spawnEnemy(k);if(e){e.elite=true;e.hp=e.max*=3;}},daily:()=>DY,city:t=>runText(t),fxk:()=>C&&C.fx.map(f=>f.k+':'+Math.round(f.x)+(f.t!==undefined?'/'+f.t.toFixed(1):'')).join(' ')+' t='+C.t.toFixed(1),C:()=>C&&{deb:C.deb.length,B:C.B.length,ppl:C.ppl.length,fx:C.fx.length},tut:()=>tut&&tut.st,story:()=>!!storyQ};
 /* ================= offline režim (funguje, když je hra nahraná na webu) ================= */
 try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&window.self===window.top){navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{try{r.update();}catch(e){}}).catch(()=>{});let reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloaded||state==='play')return;reloaded=true;location.reload();});}}catch(e){}
 })();
