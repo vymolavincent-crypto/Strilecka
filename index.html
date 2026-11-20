@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- herna-ok -->
 <html lang="cs">
 <head>
 <meta charset="utf-8">
@@ -173,7 +174,7 @@ try { navigator.storage && navigator.storage.persist && navigator.storage.persis
 const nainstalovano = navigator.standalone === true || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
 function status(ok, text){ $('status').className = 'status px' + (ok ? ' ok' : ''); $('statusT').textContent = text; }
 async function zkontroluj(){
-  try { const c = await caches.open('herna-v' + self.HERNA_VERZE); for (const h of HRY) if (!(await c.match(h.soubory[1]))) return false; return true; }
+  try { for (const g of HRY) if (!(await caches.match(g.soubory[1]))) return false; return true; }
   catch (e) { return false; }
 }
 async function obnovStav(){
@@ -209,12 +210,23 @@ $('helpClose').onclick = () => $('help').classList.add('hidden');
 
 // ---------- aktualizace ----------
 $('verT').textContent = 'Verze ' + self.HERNA_VERZE;
-async function vynutAktualizaci(){
-  $('updBtn').textContent = 'Stahuju novou verzi…';
-  try { const r = await navigator.serviceWorker.getRegistrations(); await Promise.all(r.map(x => x.unregister())); } catch (e) {}
-  try { const k = await caches.keys(); await Promise.all(k.map(x => caches.delete(x))); } catch (e) {}
-  try { await Promise.all(['./', 'index.html', 'hry.js', 'sw.js'].map(u => fetch(u, { cache: 'reload' }).catch(() => {}))); } catch (e) {}
-  location.replace(location.pathname + '?v=' + Date.now());
+async function vynutAktualizaci(tise){
+  // bezpečně: stará verze zůstane v telefonu, dokud se nová celá nestáhne
+  const btn = $('updBtn'); if (!tise) btn.textContent = 'Stahuju novou verzi…';
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) { location.replace(location.pathname + '?v=' + Date.now()); return; }
+    await reg.update();
+    const nw = reg.installing || reg.waiting;
+    if (!nw) { if (!tise) btn.textContent = '✓ Máš nejnovější verzi'; return; }
+    const ok = await new Promise(res => {
+      const t = setTimeout(() => res(false), 60000);
+      const chk = () => { if (nw.state === 'activated') { clearTimeout(t); res(true); } else if (nw.state === 'redundant') { clearTimeout(t); res(false); } };
+      nw.addEventListener('statechange', chk); chk();
+    });
+    if (ok) location.replace(location.pathname + '?v=' + Date.now());
+    else if (!tise) btn.textContent = 'Nepovedlo se – zkus to se silnějším signálem';
+  } catch (e) { if (!tise) btn.textContent = 'Nepovedlo se – zkus to znovu'; }
 }
 async function zjistiVerzi(){
   try {
@@ -227,13 +239,13 @@ $('updBtn').onclick = async () => {
   $('updBtn').textContent = 'Kontroluju…';
   const v = await zjistiVerzi();
   if (v == null) { $('updBtn').textContent = 'Nepodařilo se spojit, zkus to znovu'; return; }
-  if (v > self.HERNA_VERZE) vynutAktualizaci();
+  if (v > self.HERNA_VERZE) vynutAktualizaci(false);
   else { $('updBtn').textContent = '✓ Máš nejnovější verzi'; }
 };
 // samo se zkontroluje při otevření s internetem
 let nedavno = 0; try { nedavno = +sessionStorage.getItem('herna_upd') || 0; } catch (e) {}
 if (navigator.onLine && /^https?:$/.test(location.protocol) && Date.now() - nedavno > 15 * 60 * 1000)
-  zjistiVerzi().then(v => { if (v && v > self.HERNA_VERZE) { try { sessionStorage.setItem('herna_upd', Date.now()); } catch (e) {} vynutAktualizaci(); } });
+  zjistiVerzi().then(v => { if (v && v > self.HERNA_VERZE) { try { sessionStorage.setItem('herna_upd', Date.now()); } catch (e) {} vynutAktualizaci(true); } });
 
 addEventListener('resize', () => { drawTitle(); skyResize(); });
 drawTitle(); skyResize(); skyDraw();
