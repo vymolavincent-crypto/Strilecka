@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#fff4e8">
+<meta name="theme-color" content="#0b0d26">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Vesmírná střílečka">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -15,63 +15,65 @@
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
-body{font-family:ui-rounded,"SF Pro Rounded","Nunito","Segoe UI Rounded",system-ui,-apple-system,sans-serif;color:#3a3350;
-  background:linear-gradient(180deg,#fff4e8 0%,#fdeaf3 45%,#e9f1ff 100%) fixed;
-  padding:calc(14px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom))}
+body{background:#0b0d26;color:#dfe6ff;font-family:ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,"Courier New",monospace;
+  padding:calc(14px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom))}
+img,canvas{image-rendering:pixelated;image-rendering:crisp-edges}
+#sky{position:fixed;inset:0;width:100%;height:100%;z-index:-1}
 .wrap{max-width:540px;margin:0 auto}
-header{text-align:center;padding:10px 0 4px}
-.logo{display:inline-flex;align-items:center;gap:10px}
-.logo img{width:52px;height:52px;border-radius:14px;box-shadow:0 6px 14px -6px rgba(255,120,80,.6)}
-h1{margin:0;font-size:40px;font-weight:800;letter-spacing:.5px;background:linear-gradient(90deg,#ff7a59,#ff4f9a 50%,#7c6cff);-webkit-background-clip:text;background-clip:text;color:transparent}
-.sub{color:#8a819f;font-size:15px;margin:4px 0 14px}
-.status{display:flex;align-items:center;gap:10px;margin:0 auto 18px;padding:10px 14px;border-radius:16px;background:#fff;font-size:14px;box-shadow:0 4px 16px -8px rgba(80,60,120,.35);color:#b07a10}
-.status.ok{color:#1f9d55}
-.dot{width:10px;height:10px;border-radius:50%;background:currentColor;flex:none}
-h2{font-size:17px;margin:20px 4px 10px;color:#5b5275;display:flex;align-items:center;gap:8px}
-h2 span{font-size:12px;font-weight:600;background:#fff;border-radius:20px;padding:3px 9px;color:#8a819f}
-.game{display:flex;gap:14px;align-items:center;padding:12px;margin-bottom:12px;border-radius:22px;background:#fff;text-decoration:none;color:inherit;
-  box-shadow:0 8px 22px -12px rgba(80,60,120,.45);border-left:6px solid var(--c);transition:transform .12s}
-.game:active{transform:scale(.97)}
-.game img{width:70px;height:70px;border-radius:18px;flex:none;image-rendering:pixelated;background:#f4f1fb}
+#title{display:block;margin:6px auto 2px}
+.sub{text-align:center;color:#8fa0d8;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+/* pixelový rámeček: zubaté rohy */
+.px{--c:#3a4a9a;background:#151a44;margin:4px;box-shadow:0 -4px 0 0 var(--c),0 4px 0 0 var(--c),-4px 0 0 0 var(--c),4px 0 0 0 var(--c),inset 0 -4px 0 0 rgba(0,0,0,.35),inset 0 4px 0 0 rgba(255,255,255,.06)}
+.status{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:0 4px 20px;font-size:12.5px;color:#ffd166;--c:#7a5a1a}
+.status.ok{color:#7dffa8;--c:#1f6b45}
+.dot{width:8px;height:8px;background:currentColor;flex:none;animation:blink 1.2s steps(2) infinite}
+@keyframes blink{50%{opacity:.25}}
+h2{font-size:13px;letter-spacing:2px;margin:22px 4px 12px;color:#9fb0ff;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+h2::after{content:"";flex:1;height:4px;background:repeating-linear-gradient(90deg,#2c3778 0 6px,transparent 6px 10px)}
+.game{display:flex;gap:14px;align-items:center;padding:12px;margin:4px 4px 18px;text-decoration:none;color:inherit;--c:var(--k);transition:transform .08s steps(2)}
+.game:active{transform:translate(2px,2px)}
+.game .ico{flex:none;width:68px;height:68px;padding:4px;background:#0b0d26;box-shadow:0 0 0 4px #0b0d26,0 0 0 6px var(--k)}
+.game .ico img{width:100%;height:100%;display:block}
 .game .info{flex:1;min-width:0}
-.game .t{font-size:18px;font-weight:800;color:#2f2843;margin-bottom:3px}
-.game .d{font-size:13px;color:#7d7594;line-height:1.35}
-.game .r{font-size:12.5px;color:#5b5275;margin-top:6px;font-weight:600}
+.game .t{font-size:15px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.game .d{font-size:12px;color:#a7b2dc;line-height:1.4}
+.game .r{font-size:11.5px;color:#ffd166;margin-top:6px;font-weight:700}
 .game .r:empty{display:none}
-.game .play{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#fff;font-size:18px;box-shadow:0 6px 12px -6px var(--c)}
-.soon{padding:16px;border-radius:22px;border:2px dashed #d9cfe8;color:#a49bb8;text-align:center;font-size:14px;line-height:1.5;margin-top:4px}
-button{font:inherit;cursor:pointer}
-.link{display:block;margin:20px auto 0;padding:11px 18px;border:0;border-radius:14px;background:#fff;color:#ff4f9a;font-size:15px;font-weight:800;box-shadow:0 6px 16px -10px rgba(80,60,120,.5)}
+.game .play{flex:none;width:40px;height:40px;display:grid;place-items:center;background:var(--k);color:#0b0d26;font-size:16px;font-weight:900;
+  box-shadow:0 -3px 0 0 var(--k),0 3px 0 0 var(--k),-3px 0 0 0 var(--k),3px 0 0 0 var(--k),inset 0 -4px 0 0 rgba(0,0,0,.3)}
+.soon{padding:14px;margin:4px;text-align:center;font-size:12px;color:#6f7bb5;letter-spacing:1px;border:4px dashed #2c3778}
+button{font:inherit;cursor:pointer;border:0}
+.link{display:block;margin:22px auto 0;padding:12px 16px;color:#0b0d26;background:#5ee7ff;font-weight:900;font-size:13px;letter-spacing:1px;text-transform:uppercase;box-shadow:0 -4px 0 0 #5ee7ff,0 4px 0 0 #5ee7ff,-4px 0 0 0 #5ee7ff,4px 0 0 0 #5ee7ff,inset 0 -5px 0 0 #2aa9c9}
+.link:active{transform:translate(2px,2px)}
 .link.hidden{display:none}
-.save{margin-top:12px;text-align:center;font-size:13px;color:#8a819f;line-height:1.5}
-.modal{position:fixed;inset:0;background:rgba(60,45,90,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:5}
+.save{margin-top:16px;text-align:center;font-size:11.5px;color:#7884bd;line-height:1.6}
+.modal{position:fixed;inset:0;background:rgba(5,6,20,.85);display:flex;align-items:center;justify-content:center;padding:22px;z-index:5}
 .modal.hidden{display:none}
-.box{max-width:400px;width:100%;background:#fff;border-radius:24px;padding:22px;box-shadow:0 20px 40px -16px rgba(60,40,100,.5)}
-.box h3{margin:0 0 12px;font-size:21px;text-align:center;color:#2f2843}
-.box ol{margin:0;padding-left:22px;line-height:1.8;font-size:15px}
-.box .note{margin-top:12px;font-size:13.5px;color:#7d7594;line-height:1.5}
-.box button{margin-top:16px;width:100%;padding:13px;border-radius:14px;border:0;background:#7c6cff;color:#fff;font-weight:800;font-size:16px}
-.ic{display:inline-block;padding:0 7px;border-radius:8px;background:#f1ecfb;font-weight:700}
+.box{max-width:400px;width:100%;padding:20px;--c:#5ee7ff}
+.box h3{margin:0 0 12px;font-size:16px;text-align:center;color:#fff;text-transform:uppercase;letter-spacing:1px}
+.box ol{margin:0;padding-left:20px;line-height:1.8;font-size:13.5px}
+.box .note{margin-top:12px;font-size:12px;color:#a7b2dc;line-height:1.5}
+.box button{margin-top:18px;width:100%;padding:12px;background:#5ee7ff;color:#0b0d26;font-weight:900;letter-spacing:1px;box-shadow:inset 0 -5px 0 0 #2aa9c9}
+.ic{display:inline-block;padding:0 6px;background:#2c3778;color:#fff}
 </style>
 </head>
 <body>
+<canvas id="sky"></canvas>
 <div class="wrap">
-  <header>
-    <div class="logo"><img src="icon-192.png" alt=""><h1>Herna</h1></div>
-    <div class="sub">Naše hry · fungují i bez internetu</div>
-  </header>
-  <div class="status" id="status"><span class="dot"></span><span id="statusT">Kontroluju offline režim…</span></div>
+  <canvas id="title"></canvas>
+  <div class="sub">Herna · hry fungují i bez internetu</div>
+  <div class="status px" id="status"><span class="dot"></span><span id="statusT">Kontroluju offline režim…</span></div>
   <div id="list"></div>
-  <div class="soon">🎁 Další hry spolu brzy přidáme!</div>
-  <button class="link" id="installBtn">📲 Jak dát Hernu na plochu telefonu</button>
+  <div class="soon">▒ DALŠÍ HRY SE PŘIPRAVUJÍ ▒</div>
+  <button class="link" id="installBtn">▶ Jak dát hru na plochu</button>
   <div class="save">💾 Ve hrách s delším postupem se tvůj postup ukládá sám.</div>
 </div>
 
 <div class="modal hidden" id="help">
-  <div class="box">
-    <h3 id="helpTitle">Jak Hernu stáhnout</h3>
+  <div class="box px">
+    <h3 id="helpTitle">Jak to stáhnout</h3>
     <div id="helpBody"></div>
-    <button id="helpClose">Rozumím</button>
+    <button id="helpClose">ROZUMÍM</button>
   </div>
 </div>
 
@@ -80,36 +82,99 @@ button{font:inherit;cursor:pointer}
 const $ = id => document.getElementById(id);
 const HRY = self.HERNA_HRY || [];
 
-// --- seznam her ---
+// ---------- pixelový nápis ----------
+const F = {
+  A:["01110","10001","11111","10001","10001"], C:["01111","10000","10000","10000","01111"], E:["11111","10000","11110","10000","11111"],
+  I:["111","010","010","010","111"], K:["10001","10010","11100","10010","10001"],
+  L:["10000","10000","10000","10000","11111"], M:["10001","11011","10101","10001","10001"], N:["10001","11001","10101","10011","10001"],
+  R:["11110","10001","11110","10010","10001"], S:["01111","10000","01110","00001","11110"], T:["11111","00100","00100","00100","00100"],
+  V:["10001","10001","10001","01010","00100"]
+};
+const ACC = { 'Á':['A','acute'], 'Í':['I','acute'], 'Ř':['R','caron'], 'Č':['C','caron'], 'Ě':['E','caron'] };
+function drawTitle(){
+  const lines = ['VESMÍRNÁ', 'STŘÍLEČKA'];
+  const glyph = ch => { const a = ACC[ch]; return { g: F[a ? a[0] : ch], acc: a ? a[1] : null }; };
+  const lineW = s => [...s].reduce((w, ch) => w + glyph(ch).g[0].length + 1, -1);
+  const maxW = Math.max(...lines.map(lineW));
+  const avail = Math.min(innerWidth - 36, 504);
+  const p = Math.max(3, Math.floor(avail / (maxW + 1)));
+  const lineH = 8;  // 2 řádky na háček/čárku + 5 písmeno + 1 mezera
+  const cv = $('title'), d = Math.min(2, devicePixelRatio || 1);
+  const Wd = (maxW + 1) * p, Hd = (lines.length * lineH + 1) * p;
+  cv.width = Wd * d; cv.height = Hd * d; cv.style.width = Wd + 'px'; cv.style.height = Hd + 'px';
+  const c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0); c.imageSmoothingEnabled = false;
+  const cols = [['#5ee7ff', '#2aa9c9'], ['#ff6bd6', '#b8379a']];
+  lines.forEach((s, li) => {
+    let x = Math.round((maxW - lineW(s)) / 2);
+    const y0 = li * lineH;
+    for (const ch of s) {
+      const { g, acc } = glyph(ch); const w = g[0].length;
+      const px = [];
+      g.forEach((row, ry) => [...row].forEach((b, rx) => { if (b === '1') px.push([x + rx, y0 + 2 + ry, ry]); }));
+      if (acc === 'acute') { px.push([x + w - 2, y0, -1]); px.push([x + w - 3, y0 + 1, -1]); }
+      if (acc === 'caron') { px.push([x + 1, y0, -1]); px.push([x + w - 2, y0, -1]); px.push([x + (w >> 1), y0 + 1, -1]); }
+      c.fillStyle = '#05061a'; for (const [a, b] of px) c.fillRect((a + 1) * p, (b + 1) * p, p, p);
+      for (const [a, b, ry] of px) { c.fillStyle = ry >= 3 ? cols[li][1] : cols[li][0]; c.fillRect(a * p, b * p, p, p); }
+      c.fillStyle = 'rgba(255,255,255,.55)'; for (const [a, b, ry] of px) if (ry === 0) c.fillRect(a * p, b * p, p, Math.max(1, p / 3));
+      x += w + 1;
+    }
+  });
+}
+
+// ---------- pixelový vesmír v pozadí ----------
+const sky = $('sky'), sc = sky.getContext('2d');
+const P = 3; let SW = 0, SH = 0, stars = [];
+function skyResize(){
+  SW = Math.ceil(innerWidth / P); SH = Math.ceil(innerHeight / P);
+  sky.width = SW; sky.height = SH;
+  stars = Array.from({ length: Math.round(SW * SH / 260) }, () => ({ x: Math.random() * SW, y: Math.random() * SH, v: .03 + Math.random() * .12, c: Math.random() < .15 ? '#ffffff' : Math.random() < .5 ? '#5f6cb8' : '#3b4585', t: Math.random() * 6 }));
+}
+function planet(cx, cy, r, base, shade, ring){
+  for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) {
+    if (x * x + y * y > r * r) continue;
+    sc.fillStyle = (x + y > r * 0.35) ? shade : ((x - y + (y % 3 === 0 ? 2 : 0)) % 7 === 0 ? shade : base);
+    sc.fillRect(cx + x, cy + y, 1, 1);
+  }
+  if (ring) { sc.fillStyle = ring; for (let x = -r - 5; x <= r + 5; x++) { const y = Math.round(x * 0.25); if (x * x + y * y > r * r || y > 0) sc.fillRect(cx + x, cy + y, 1, 1); } }
+}
+let tt = 0;
+function skyDraw(){
+  tt += 1;
+  sc.fillStyle = '#0b0d26'; sc.fillRect(0, 0, SW, SH);
+  for (const s of stars) {
+    s.y += s.v; if (s.y >= SH) { s.y = 0; s.x = Math.random() * SW; }
+    sc.fillStyle = s.c; if (s.c === '#ffffff' && Math.sin(tt / 20 + s.t) > .6) sc.fillStyle = '#9fe8ff';
+    sc.fillRect(s.x | 0, s.y | 0, 1, 1);
+  }
+  planet(SW - 18, Math.round(SH * 0.82), 11, '#7a5cff', '#4b36b0', '#ff9ad8');
+  planet(14, Math.round(SH * 0.42), 5, '#3fd0b0', '#22806f');
+  requestAnimationFrame(skyDraw);
+}
+
+// ---------- seznam her ----------
 const karta = h => `
-  <a class="game" style="--c:${h.barva}" href="${h.soubory[1]}">
-    <img src="${h.ikona}" alt="">
+  <a class="game px" style="--k:${h.barva}" href="${h.soubory[1]}">
+    <div class="ico"><img src="${h.ikona}" alt=""></div>
     <div class="info"><div class="t">${h.nazev}</div><div class="d">${h.popis}</div><div class="r" data-r="${h.id}"></div></div>
     <div class="play">▶</div>
   </a>`;
 $('list').innerHTML =
-  '<h2>👥 Pro 2 hráče <span>na jednom telefonu</span></h2>' + HRY.filter(h => h.hraci === 2).map(karta).join('') +
-  '<h2>🎮 Pro 1 hráče</h2>' + HRY.filter(h => h.hraci !== 2).map(karta).join('');
+  '<h2>👥 Pro 2 hráče</h2>' + HRY.filter(h => h.hraci === 2).map(karta).join('') +
+  '<h2>🚀 Pro 1 hráče</h2>' + HRY.filter(h => h.hraci !== 2).map(karta).join('');
 function stavy(){ for (const h of HRY) { const el = document.querySelector('[data-r="' + h.id + '"]'); try { el.textContent = h.stav ? h.stav() : ''; } catch (e) {} } }
-stavy();
-addEventListener('pageshow', stavy);
-
-// --- ať telefon uložený postup nemaže ---
+stavy(); addEventListener('pageshow', stavy);
 try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
 
-// --- offline stav ---
+// ---------- offline stav ----------
 const nainstalovano = navigator.standalone === true || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
-function status(ok, text){ $('status').className = 'status' + (ok ? ' ok' : ''); $('statusT').textContent = text; }
+function status(ok, text){ $('status').className = 'status px' + (ok ? ' ok' : ''); $('statusT').textContent = text; }
 async function zkontroluj(){
-  try {
-    const c = await caches.open('herna-v' + self.HERNA_VERZE);
-    for (const h of HRY) if (!(await c.match(h.soubory[1]))) return false;
-    return true;
-  } catch (e) { return false; }
+  try { const c = await caches.open('herna-v' + self.HERNA_VERZE); for (const h of HRY) if (!(await c.match(h.soubory[1]))) return false; return true; }
+  catch (e) { return false; }
 }
 async function obnovStav(){
   if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) { status(false, 'Offline režim jde jen na webové adrese'); return; }
-  if (await zkontroluj()) status(true, nainstalovano ? 'Všechny hry fungují offline – i ve vlaku 🚆' : 'Všechny hry fungují offline – i ve vlaku 🚆');
+  if (await zkontroluj()) status(true, 'Všechny hry fungují offline – i ve vlaku');
   else status(false, navigator.onLine ? 'Chystám hry na hraní bez internetu…' : 'Připoj se jednou k internetu, pak pojedou hry i offline');
 }
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
@@ -120,26 +185,26 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
 obnovStav();
 let tik = 0; const iv = setInterval(() => { obnovStav(); if (++tik > 15) clearInterval(iv); }, 1500);
 
-// --- stažení na plochu ---
+// ---------- návod na plochu ----------
 let vyzva = null;
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); vyzva = e; });
 const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 if (nainstalovano) $('installBtn').classList.add('hidden');
 $('installBtn').onclick = () => {
   if (vyzva) { vyzva.prompt(); vyzva = null; return; }
-  if (nainstalovano) {
-    $('helpTitle').textContent = 'Herna je stažená 🎉';
-    $('helpBody').innerHTML = '<div class="note" style="font-size:15px;color:#3a3350">Hry máš v telefonu a jedou i bez internetu. Když přidáme novou hru, stačí Hernu jednou otevřít s internetem a stáhne se sama.</div>';
-  } else if (ios) {
+  if (ios) {
     $('helpTitle').textContent = 'Stažení na iPhone';
-    $('helpBody').innerHTML = '<ol><li>Otevři tuhle stránku v <b>Safari</b>.</li><li>Dole klepni na <span class="ic">Sdílet ⬆︎</span>.</li><li>Sjeď níž a vyber <span class="ic">Přidat na plochu ➕</span>.</li><li>Klepni na <b>Přidat</b>.</li></ol><div class="note">Na ploše se objeví ikona <b>Herna</b>. Spouštěj hry přes ni, pak jedou i bez internetu a postup se ti nesmaže.</div>';
+    $('helpBody').innerHTML = '<ol><li>Otevři tuhle stránku v <b>Safari</b>.</li><li>Dole klepni na <span class="ic">Sdílet ⬆︎</span>.</li><li>Vyber <span class="ic">Přidat na plochu ➕</span>.</li><li>Klepni na <b>Přidat</b>.</li></ol><div class="note">Na ploše se objeví raketka <b>Vesmírná střílečka</b>. Spouštěj hry přes ni, pak jedou i bez internetu.</div>';
   } else {
     $('helpTitle').textContent = 'Stažení do telefonu';
-    $('helpBody').innerHTML = '<ol><li>Otevři stránku v <b>Chrome</b>.</li><li>Klepni na <span class="ic">⋮</span> vpravo nahoře.</li><li>Vyber <span class="ic">Přidat na plochu</span> nebo <span class="ic">Nainstalovat aplikaci</span>.</li></ol><div class="note">Pak se Herna spouští z ikony na ploše a hry jedou i bez internetu.</div>';
+    $('helpBody').innerHTML = '<ol><li>Otevři stránku v <b>Chrome</b>.</li><li>Klepni na <span class="ic">⋮</span> vpravo nahoře.</li><li>Vyber <span class="ic">Přidat na plochu</span>.</li></ol><div class="note">Pak se hry spouští z ikony na ploše a jedou i bez internetu.</div>';
   }
   $('help').classList.remove('hidden');
 };
 $('helpClose').onclick = () => $('help').classList.add('hidden');
+
+addEventListener('resize', () => { drawTitle(); skyResize(); });
+drawTitle(); skyResize(); skyDraw();
 </script>
 </body>
 </html>
