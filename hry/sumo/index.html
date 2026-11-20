@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vesmírná střílečka">
+<link rel="manifest" href="../../manifest.webmanifest">
+<link rel="icon" href="ikona.png">
+<title>Pixel Sumo</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b0d26;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;
+  font-family:ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,"Courier New",monospace;color:#dfe6ff}
+canvas{position:fixed;left:0;top:0;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:rgba(8,9,30,.84);z-index:3;text-align:center}
+.hidden{display:none!important}
+h1{margin:0;font-size:28px;letter-spacing:2px;color:#ffd166;text-shadow:3px 3px 0 #05061a;text-transform:uppercase}
+p{margin:0;color:#a7b2dc;font-size:13px;line-height:1.55;max-width:320px}
+button{font:inherit;cursor:pointer;border:0}
+.btn{--k:#ff6b6b;width:250px;padding:13px;font-size:15px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#0b0d26;background:var(--k);margin:4px;
+  box-shadow:0 -4px 0 0 var(--k),0 4px 0 0 var(--k),-4px 0 0 0 var(--k),4px 0 0 0 var(--k),inset 0 -5px 0 0 rgba(0,0,0,.28)}
+.btn:active{transform:translate(2px,2px)}
+.btn.b{--k:#4d96ff}.btn.g{--k:#2c3778;color:#dfe6ff}
+.diff{display:flex;gap:6px}
+.diff button{padding:7px 10px;background:#151a44;color:#8fa0d8;font-weight:800;font-size:12px;box-shadow:0 0 0 3px #2c3778}
+.diff button.on{background:#ffd166;color:#0b0d26;box-shadow:0 0 0 3px #ffd166}
+.half{position:absolute;left:0;right:0;height:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none}
+.half.top{top:0;transform:rotate(180deg)}
+.half.bot{bottom:0}
+.half button{pointer-events:auto}
+.big{font-size:30px;font-weight:900;letter-spacing:2px;text-shadow:3px 3px 0 #05061a}
+#msg{position:fixed;inset:0;z-index:2;pointer-events:none}
+#msg .big{font-size:24px}
+.tip{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;text-align:left;font-size:12.5px;color:#a7b2dc;max-width:300px}
+.tip b{color:#ffd166}
+#homeBtn,#pauseBtn{position:fixed;z-index:2;width:38px;height:38px;background:#151a44;color:#dfe6ff;font-size:16px;font-weight:900;box-shadow:0 0 0 3px #2c3778;left:10px;top:50%;margin-top:-19px}
+#pauseBtn{left:auto;right:10px}
+</style>
+</head>
+<body>
+<div id="sa" style="position:fixed;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)"></div>
+<canvas id="c"></canvas>
+<div id="msg" class="hidden"><div class="half top"><div class="big" id="msgTop"></div></div><div class="half bot"><div class="big" id="msgBot"></div></div></div>
+<button id="homeBtn" aria-label="Menu">⌂</button>
+<button id="pauseBtn" aria-label="Pauza">II</button>
+
+<div class="overlay" id="menu">
+  <h1>Pixel Sumo</h1>
+  <p>Vystrč soupeře z vesmírné plošiny! Plošina se postupně zmenšuje. Kdo první vyhraje <b>3 kola</b>, je šampion.</p>
+  <div class="tip"><span>👆</span><span><b>Táhni prstem</b> na své polovině, kam chceš jet.</span><span>⚡</span><span><b>Klepni druhým prstem</b> (nebo rychle ťukni) a uděláš silný náraz.</span></div>
+  <button class="btn" id="p2Btn">👥 Dva hráči</button>
+  <button class="btn b" id="aiBtn">🤖 Proti počítači</button>
+  <div class="diff" id="diff"><button data-d="0">LEHKÝ</button><button data-d="1" class="on">STŘEDNÍ</button><button data-d="2">TĚŽKÝ</button></div>
+  <button class="btn g" id="backBtn">⌂ Zpět do menu</button>
+</div>
+
+<div class="overlay hidden" id="pause">
+  <h1>Pauza</h1>
+  <button class="btn b" id="resumeBtn">▶ Pokračovat</button>
+  <button class="btn g" id="quitBtn">Konec hry</button>
+</div>
+
+<div class="overlay hidden" id="end" style="padding:0">
+  <div class="half top"><div class="big" id="endTop"></div><div id="serTop" style="font-size:13px;color:#a7b2dc"></div></div>
+  <div class="half bot"><div class="big" id="endBot"></div><div id="serBot" style="font-size:13px;color:#a7b2dc"></div>
+    <button class="btn" id="againBtn">↻ Odveta</button><button class="btn g" id="menuBtn">Menu</button></div>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const cv = $('c'), cx = cv.getContext('2d');
+const off = document.createElement('canvas'), o = off.getContext('2d');
+const LW = 112, ROUNDS = 3;
+let W, H, DPR, LH, S, insetT = 0, insetB = 0, CX, CY;
+let mode = 'menu', vsAI = false, diff = 1, paused = false;
+let F, R, R0, Rmin, roundT, state, stateT, wins, parts, stars, shake = 0, arenaImg = null, arenaR = -1, series = [0, 0], lastWinner = -1;
+
+const COL = [{ body:'#ff6b6b', dark:'#c23b4a', light:'#ffa3a3', belt:'#ffd166', name:'Červený' }, { body:'#4d96ff', dark:'#2a5fc0', light:'#9cc4ff', belt:'#7dffa8', name:'Modrý' }];
+
+function resize(){
+  DPR = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  LH = Math.round(LW * H / W); S = W / LW; off.width = LW; off.height = LH;
+  const sa = getComputedStyle($('sa')); insetT = Math.ceil(parseFloat(sa.paddingTop) / S) || 0; insetB = Math.ceil(parseFloat(sa.paddingBottom) / S) || 0;
+  CX = LW / 2; CY = LH / 2; R0 = Math.min(LW * 0.44, LH * 0.3); Rmin = R0 * 0.48; arenaR = -1;
+  stars = Array.from({ length: 80 }, () => ({ x: Math.random() * LW, y: Math.random() * LH, c: Math.random() < .2 ? '#ffffff' : Math.random() < .5 ? '#5f6cb8' : '#353f80', t: Math.random() * 7 }));
+}
+
+// ---------- plošina ----------
+function buildArena(r){
+  const s = Math.ceil(r) * 2 + 4, c = document.createElement('canvas'); c.width = c.height = s; const g = c.getContext('2d');
+  const m = s / 2;
+  for (let y = 0; y < s; y++) for (let x = 0; x < s; x++) {
+    const dx = x + 0.5 - m, dy = y + 0.5 - m, d = Math.hypot(dx, dy);
+    if (d > r + 0.5) continue;
+    let col;
+    if (d > r - 1.5) col = '#5ee7ff';
+    else if (d > r - 3) col = '#2c3778';
+    else {
+      const tx = Math.floor((x - m + 300) / 7), ty = Math.floor((y - m + 300) / 7);
+      const lx = (x - m + 300) % 7, ly = (y - m + 300) % 7;
+      col = (tx + ty) % 2 ? '#3d4a8c' : '#36427f';
+      if (lx === 0 || ly === 0) col = '#2a3368';
+      if (lx === 1 && ly === 1) col = '#5865a8';
+      if (d < r * 0.22 && d > r * 0.22 - 1.2) col = '#ffd166';
+    }
+    g.fillStyle = col; g.fillRect(x, y, 1, 1);
+  }
+  // středová čára
+  g.fillStyle = 'rgba(255,209,102,.5)'; for (let x = 4; x < s - 4; x += 4) { const dx = x - m; if (Math.abs(dx) < r - 4) g.fillRect(x, Math.round(m), 2, 1); }
+  return c;
+}
+
+// ---------- hráči ----------
+function newRoundSetup(){
+  R = R0; roundT = 0; parts = [];
+  F = [0, 1].map(i => ({ i, x: CX, y: CY + (i === 0 ? 1 : -1) * R0 * 0.55, vx: 0, vy: 0, sx: 0, sy: 0, fx: 0, fy: i === 0 ? -1 : 1,
+    dash: 0, cd: 0, fall: 0, pid: null, ox: 0, oy: 0, px: 0, py: 0, downT: 0, moved: 0, blink: Math.random() * 3, hitT: 0 }));
+  state = 'count'; stateT = 3; showMsg('KOLO ' + (wins[0] + wins[1] + 1));
+}
+function newGame(){ wins = [0, 0]; newRoundSetup(); }
+function showMsg(t, tTop){ $('msgBot').textContent = t; $('msgTop').textContent = tTop != null ? tTop : (vsAI ? '' : t); $('msg').classList.remove('hidden'); }
+function hideMsg(){ $('msg').classList.add('hidden'); }
+
+// ---------- zvuk ----------
+let AC = null;
+function audioInit(){ if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {} } if (AC && AC.state === 'suspended') AC.resume(); }
+function snd(f, d, v, type = 'square', slide = 0){
+  if (!AC) return; const t = AC.currentTime, osc = AC.createOscillator(), g = AC.createGain();
+  osc.type = type; osc.frequency.setValueAtTime(f, t); if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + d); osc.connect(g); g.connect(AC.destination); osc.start(t); osc.stop(t + d);
+}
+
+// ---------- ovládání: joystick + náraz ----------
+const toL = e => ({ x: e.clientX / S, y: e.clientY / S });
+function tryDash(f){
+  if (f.cd > 0 || f.fall || state !== 'fight') return;
+  let dx = f.sx, dy = f.sy, l = Math.hypot(dx, dy);
+  if (l < 0.2) { dx = f.fx; dy = f.fy; l = Math.hypot(dx, dy) || 1; }
+  f.vx += dx / l * 120; f.vy += dy / l * 120; f.dash = 0.28; f.cd = 1.3;
+  for (let k = 0; k < 8; k++) parts.push({ x: f.x, y: f.y, vx: -dx / l * 30 + (Math.random() - .5) * 30, vy: -dy / l * 30 + (Math.random() - .5) * 30, t: 0.35, c: COL[f.i].light });
+  snd(220, 0.15, 0.06, 'sawtooth', 260);
+}
+cv.addEventListener('pointerdown', e => {
+  audioInit(); if (mode !== 'play' || paused) return;
+  const l = toL(e), i = l.y > LH / 2 ? 0 : 1; if (vsAI && i === 1) return;
+  const f = F[i];
+  if (f.pid != null && f.pid !== e.pointerId) { tryDash(f); return; }   // druhý prst = náraz
+  f.pid = e.pointerId; f.ox = l.x; f.oy = l.y; f.px = l.x; f.py = l.y; f.downT = performance.now(); f.moved = 0;
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+});
+cv.addEventListener('pointermove', e => {
+  if (!F) return;
+  for (const f of F) if (f.pid === e.pointerId) {
+    const l = toL(e); f.moved = Math.max(f.moved, Math.hypot(l.x - f.ox, l.y - f.oy));
+    f.px = l.x; f.py = l.y;
+    let dx = l.x - f.ox, dy = l.y - f.oy; const d = Math.hypot(dx, dy), MAXD = 11;
+    if (d > MAXD) { f.ox += dx * (1 - MAXD / d); f.oy += dy * (1 - MAXD / d); dx = l.x - f.ox; dy = l.y - f.oy; }  // joystick jede za prstem
+    f.sx = dx / MAXD; f.sy = dy / MAXD;
+  }
+});
+const up = e => {
+  if (!F) return;
+  for (const f of F) if (f.pid === e.pointerId) {
+    if (performance.now() - f.downT < 220 && f.moved < 3) tryDash(f);   // rychlé ťuknutí = náraz
+    f.pid = null; f.sx = 0; f.sy = 0;
+  }
+};
+cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+
+// ---------- počítač ----------
+const AIS = [{ acc: 0.55, dash: 0.25, smart: 0.4 }, { acc: 0.8, dash: 0.6, smart: 0.75 }, { acc: 1, dash: 1, smart: 1 }];
+let aiT = 0;
+function aiThink(dt){
+  const me = F[1], op = F[0], a = AIS[diff];
+  aiT -= dt;
+  const mdx = me.x - CX, mdy = me.y - CY, md = Math.hypot(mdx, mdy);
+  let tx = op.x - me.x, ty = op.y - me.y;
+  // zkus se dostat "za" soupeře směrem ke středu, ať ho tlačíš ven
+  const odx = op.x - CX, ody = op.y - CY, od = Math.hypot(odx, ody) || 1;
+  const behindX = op.x - odx / od * 10, behindY = op.y - ody / od * 10;
+  if (Math.random() < a.smart) { tx = behindX - me.x + (op.x - behindX) * 0.6; ty = behindY - me.y + (op.y - behindY) * 0.6; }
+  // u okraje? zpátky ke středu
+  if (md > R * 0.72) { tx = tx * 0.3 - mdx / md * 2; ty = ty * 0.3 - mdy / md * 2; }
+  const l = Math.hypot(tx, ty) || 1;
+  me.sx = tx / l * a.acc; me.sy = ty / l * a.acc;
+  const dist = Math.hypot(op.x - me.x, op.y - me.y);
+  if (aiT <= 0 && dist < 24 && me.cd <= 0) {
+    aiT = 0.3;
+    const dot = ((op.x - me.x) * odx + (op.y - me.y) * ody) / (dist * od);
+    if (Math.random() < a.dash && dot > 0.2) { me.sx = (op.x - me.x) / dist; me.sy = (op.y - me.y) / dist; tryDash(me); }
+  }
+}
+
+// ---------- fyzika ----------
+const RAD = 6;
+function update(dt){
+  for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 0.92; q.vy *= 0.92; q.t -= dt; }
+  parts = parts.filter(q => q.t > 0);
+  shake = Math.max(0, shake - dt * 18);
+  if (state === 'count') {
+    const b = Math.ceil(stateT); stateT -= dt;
+    if (stateT > 0 && Math.ceil(stateT) !== b) { snd(440, 0.1, 0.05); showMsg(stateT > 1 ? 'PŘIPRAV SE…' : 'POZOR…'); }
+    if (stateT <= 0) { state = 'fight'; showMsg('BOJ!'); snd(880, 0.25, 0.06); setTimeout(() => { if (state === 'fight') hideMsg(); }, 600); }
+  }
+  if (state === 'fight') {
+    roundT += dt;
+    if (roundT > 7 && R > Rmin) {
+      const nr = Math.max(Rmin, R - dt * 1.6);
+      if (Math.floor(nr) !== Math.floor(R)) for (let k = 0; k < 10; k++) { const a = Math.random() * 6.283; parts.push({ x: CX + Math.cos(a) * R, y: CY + Math.sin(a) * R, vx: Math.cos(a) * 6, vy: Math.sin(a) * 6 + 4, t: 0.8, c: Math.random() < .5 ? '#3d4a8c' : '#5ee7ff' }); }
+      R = nr;
+    }
+  }
+  if (vsAI && state === 'fight') aiThink(dt);
+  for (const f of F) {
+    f.cd = Math.max(0, f.cd - dt); f.dash = Math.max(0, f.dash - dt); f.hitT = Math.max(0, f.hitT - dt); f.blink -= dt; if (f.blink < -0.12) f.blink = 2 + Math.random() * 3;
+    if (f.fall) { f.fall += dt; f.vx *= 0.96; f.vy *= 0.96; f.x += f.vx * dt; f.y += f.vy * dt; continue; }
+    const live = state === 'fight';
+    const acc = 260;
+    if (live) { f.vx += f.sx * acc * dt; f.vy += f.sy * acc * dt; }
+    const damp = Math.pow(0.08, dt); f.vx *= damp; f.vy *= damp;
+    const sp = Math.hypot(f.vx, f.vy), mx = f.dash > 0 ? 200 : 75; if (sp > mx) { f.vx *= mx / sp; f.vy *= mx / sp; }
+    f.x += f.vx * dt; f.y += f.vy * dt;
+    if (sp > 8) { f.fx = f.vx / sp; f.fy = f.vy / sp; }
+    if (sp > 40 && Math.random() < 0.4) parts.push({ x: f.x + (Math.random() - .5) * 6, y: f.y + 4, vx: 0, vy: 0, t: 0.3, c: '#5865a8' });
+    // spadl?
+    if (Math.hypot(f.x - CX, f.y - CY) > R + 1) {
+      f.fall = 0.001; snd(500, 0.7, 0.07, 'triangle', -420);
+      if (state === 'fight') { state = 'over'; stateT = 1.6; }
+    }
+  }
+  // srážka
+  const a = F[0], b = F[1];
+  if (!a.fall && !b.fall) {
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+    if (d < RAD * 2 && d > 0) {
+      const nx = dx / d, ny = dy / d, ov = RAD * 2 - d;
+      a.x -= nx * ov / 2; a.y -= ny * ov / 2; b.x += nx * ov / 2; b.y += ny * ov / 2;
+      const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+      if (rv < 0) {
+        const j = -(1 + 0.9) * rv / 2;
+        let ja = j, jb = j;
+        if (a.dash > 0) jb += 70; if (b.dash > 0) ja += 70;
+        a.vx -= ja * nx; a.vy -= ja * ny; b.vx += jb * nx; b.vy += jb * ny;
+        const hard = Math.abs(rv) > 50 || a.dash > 0 || b.dash > 0;
+        a.hitT = b.hitT = 0.12;
+        for (let k = 0; k < (hard ? 14 : 5); k++) parts.push({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, vx: (Math.random() - .5) * 80, vy: (Math.random() - .5) * 80, t: 0.35, c: Math.random() < .5 ? '#ffffff' : '#ffd166' });
+        if (hard) { shake = 3; snd(120, 0.15, 0.12, 'square', -60); try { navigator.vibrate && navigator.vibrate(40); } catch (_) {} }
+        else snd(260, 0.05, 0.04);
+      }
+    }
+  }
+  if (state === 'over') {
+    stateT -= dt;
+    if (stateT <= 0) {
+      const loser = F[0].fall ? 0 : 1, w = 1 - loser;
+      wins[w]++; lastWinner = w;
+      if (wins[w] >= ROUNDS) return endGame(w);
+      state = 'point'; stateT = 1.5;
+      const nm = vsAI ? (w === 0 ? 'BOD PRO TEBE!' : 'BOD PRO POČÍTAČ') : 'BOD: ' + COL[w].name.toUpperCase();
+      showMsg(nm); snd(660, 0.12, 0.06); setTimeout(() => snd(880, 0.2, 0.06), 120);
+    }
+  } else if (state === 'point') { stateT -= dt; if (stateT <= 0) newRoundSetup(); }
+}
+
+// ---------- kreslení ----------
+function drawFighter(f){
+  const c = COL[f.i];
+  let sc = 1; if (f.fall) sc = Math.max(0, 1 - f.fall / 0.9);
+  if (sc <= 0) return;
+  const sp = Math.hypot(f.vx, f.vy), squash = f.dash > 0 ? 0.25 : Math.min(0.15, sp / 500);
+  const rx = RAD * sc * (1 + squash), ry = RAD * sc * (1 - squash * 0.7);
+  const x0 = Math.round(f.x), y0 = Math.round(f.y);
+  // stín
+  if (!f.fall) { o.fillStyle = 'rgba(0,0,0,.35)'; for (let x = -RAD; x <= RAD; x++) o.fillRect(x0 + x, y0 + RAD - 1, 1, 2); }
+  for (let y = -Math.ceil(ry); y <= Math.ceil(ry); y++) for (let x = -Math.ceil(rx); x <= Math.ceil(rx); x++) {
+    const e = (x * x) / (rx * rx) + (y * y) / (ry * ry); if (e > 1.05) continue;
+    let col = c.body;
+    if (e > 0.7 && y > 0) col = c.dark; else if (x < -rx * 0.2 && y < -ry * 0.3 && e < 0.6) col = c.light;
+    if (Math.abs(y - ry * 0.25) < 1 && sc > 0.5) col = c.belt;
+    if (f.hitT > 0) col = '#ffffff';
+    o.fillStyle = col; o.fillRect(x0 + x, y0 + y, 1, 1);
+  }
+  if (sc > 0.6) {
+    // oči koukají směrem pohybu
+    const ex = Math.round(f.fx * 2), ey = Math.round(f.fy * 2) - 2;
+    const blink = f.blink < 0;
+    for (const s of [-1, 1]) {
+      const px = x0 + ex + s * 2 - (s > 0 ? 0 : 1), py = y0 + ey;
+      o.fillStyle = '#ffffff'; o.fillRect(px, py, 2, blink ? 1 : 2);
+      if (!blink) { o.fillStyle = '#0b0d26'; o.fillRect(px + (f.fx > 0.3 ? 1 : 0), py + (f.fy > 0.3 ? 1 : 0), 1, 1); }
+    }
+    if (f.dash > 0) { o.fillStyle = '#0b0d26'; o.fillRect(x0 + ex - 1, y0 + ey + 3, 3, 1); }
+  }
+  // připravenost nárazu
+  if (!f.fall && f.cd <= 0 && state === 'fight') { o.fillStyle = (performance.now() / 150 | 0) % 2 ? '#ffd166' : '#fff3c4'; o.fillRect(x0 - 1, y0 - RAD - 3, 3, 1); o.fillRect(x0, y0 - RAD - 4, 1, 3); }
+}
+function drawStick(f){
+  if (f.pid == null || f.fall) return;
+  const x = Math.round(f.ox), y = Math.round(f.oy);
+  o.fillStyle = 'rgba(255,255,255,.18)';
+  for (let a = 0; a < 28; a++) { const an = a / 28 * 6.283; o.fillRect(Math.round(x + Math.cos(an) * 11), Math.round(y + Math.sin(an) * 11), 1, 1); }
+  o.fillStyle = COL[f.i].light; o.globalAlpha = 0.6;
+  const kx = Math.round(f.px), ky = Math.round(f.py); o.fillRect(kx - 2, ky - 3, 5, 7); o.fillRect(kx - 3, ky - 2, 7, 5); o.globalAlpha = 1;
+}
+function drawPips(){
+  for (let k = 0; k < ROUNDS; k++) {
+    // dole červený, nahoře modrý
+    const x = LW / 2 - (ROUNDS * 7) / 2 + k * 7;
+    o.fillStyle = k < wins[0] ? '#ffd166' : '#2c3266'; o.fillRect(x, LH - 6 - insetB, 5, 3); o.fillRect(x + 1, LH - 7 - insetB, 1, 1); o.fillRect(x + 3, LH - 7 - insetB, 1, 1);
+    o.fillStyle = k < wins[1] ? '#ffd166' : '#2c3266'; o.fillRect(x, 3 + insetT, 5, 3); o.fillRect(x + 1, 6 + insetT, 1, 1); o.fillRect(x + 3, 6 + insetT, 1, 1);
+  }
+  o.fillStyle = COL[0].body; o.fillRect(LW / 2 - ROUNDS * 3.5 - 6, LH - 6 - insetB, 3, 3);
+  o.fillStyle = COL[1].body; o.fillRect(LW / 2 - ROUNDS * 3.5 - 6, 3 + insetT, 3, 3);
+}
+function draw(){
+  const t = performance.now() / 1000;
+  o.fillStyle = '#0b0d26'; o.fillRect(0, 0, LW, LH);
+  for (const s of stars) { o.fillStyle = (s.c === '#ffffff' && Math.sin(t * 2 + s.t) > .7) ? '#9fe8ff' : s.c; o.fillRect(s.x | 0, s.y | 0, 1, 1); }
+  // hranice polovin
+  o.fillStyle = '#1a2050'; for (let x = 0; x < LW; x += 6) o.fillRect(x, LH / 2 | 0, 3, 1);
+  if (Math.round(R * 2) !== arenaR) { arenaR = Math.round(R * 2); arenaImg = buildArena(arenaR / 2); }
+  // padající hráč pod plošinou
+  for (const f of F) if (f.fall) drawFighter(f);
+  o.drawImage(arenaImg, Math.round(CX - arenaImg.width / 2), Math.round(CY - arenaImg.height / 2));
+  // podsvícení okraje
+  if (state === 'fight' && roundT > 7 && R > Rmin && (t * 4 | 0) % 2) { o.fillStyle = '#ff6b6b'; for (let a = 0; a < 90; a++) { const an = a / 90 * 6.283; o.fillRect(Math.round(CX + Math.cos(an) * R), Math.round(CY + Math.sin(an) * R), 1, 1); } }
+  for (const q of parts) { o.fillStyle = q.c; o.fillRect(q.x | 0, q.y | 0, 1, 1); }
+  const order = F.filter(f => !f.fall).sort((p, q) => p.y - q.y);
+  for (const f of order) drawFighter(f);
+  for (const f of F) drawStick(f);
+  drawPips();
+  cx.setTransform(1, 0, 0, 1, 0, 0); cx.imageSmoothingEnabled = false;
+  const sx = shake ? (Math.random() - .5) * shake * S : 0, sy = shake ? (Math.random() - .5) * shake * S : 0;
+  cx.fillStyle = '#0b0d26'; cx.fillRect(0, 0, cv.width, cv.height);
+  cx.drawImage(off, sx * DPR, sy * DPR, cv.width, cv.height);
+}
+function endGame(w){
+  mode = 'end'; hideMsg(); series[w]++;
+  const win = 'ŠAMPION! 🏆', lose = 'PROHRA 😵';
+  if (vsAI) { $('endBot').textContent = w === 0 ? win : 'Počítač vyhrál 🤖'; $('endTop').textContent = ''; }
+  else { $('endBot').textContent = w === 0 ? win : lose; $('endTop').textContent = w === 1 ? win : lose; }
+  $('endBot').style.color = w === 0 ? '#ffd166' : '#ff6b6b'; $('endTop').style.color = w === 1 ? '#ffd166' : '#ff6b6b';
+  $('serBot').textContent = 'Série ' + series[0] + ' : ' + series[1]; $('serTop').textContent = vsAI ? '' : 'Série ' + series[1] + ' : ' + series[0];
+  $('end').classList.remove('hidden');
+  snd(523, .15, .07); setTimeout(() => snd(659, .15, .07), 150); setTimeout(() => snd(784, .3, .07), 300);
+}
+let last = performance.now();
+function loop(now){
+  const dt = Math.min(0.04, (now - last) / 1000); last = now;
+  if (mode === 'play' && !paused) update(dt);
+  if (F) draw();
+  requestAnimationFrame(loop);
+}
+function start(ai){
+  if (ai !== vsAI) series = [0, 0];
+  vsAI = ai; mode = 'play'; paused = false; newGame(); audioInit();
+  ['menu', 'end', 'pause'].forEach(id => $(id).classList.add('hidden'));
+}
+$('p2Btn').onclick = () => start(false);
+$('aiBtn').onclick = () => start(true);
+$('diff').onclick = e => { const b = e.target.closest('button'); if (!b) return; diff = +b.dataset.d; [...$('diff').children].forEach(x => x.classList.toggle('on', x === b)); };
+$('againBtn').onclick = () => start(vsAI);
+const toMenu = () => { mode = 'menu'; hideMsg(); ['end', 'pause'].forEach(id => $(id).classList.add('hidden')); $('menu').classList.remove('hidden'); };
+$('menuBtn').onclick = toMenu; $('quitBtn').onclick = toMenu;
+const home = () => { location.href = '../../index.html'; };
+$('backBtn').onclick = home;
+const pause = () => { if (mode !== 'play') return; paused = true; $('pause').classList.remove('hidden'); };
+$('homeBtn').onclick = () => { if (mode === 'play') pause(); else home(); };
+$('pauseBtn').onclick = pause;
+$('resumeBtn').onclick = () => { paused = false; $('pause').classList.add('hidden'); last = performance.now(); };
+document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'play' && !paused) pause(); });
+addEventListener('resize', resize);
+resize(); wins = [0, 0]; newRoundSetup(); hideMsg(); state = 'idle';
+requestAnimationFrame(loop);
+try { if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('../../sw.js', { updateViaCache: 'none' }).catch(() => {}); } catch (_) {}
+})();
+</script>
+</body>
+</html>

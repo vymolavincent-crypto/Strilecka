@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vesmírná střílečka">
+<link rel="manifest" href="../../manifest.webmanifest">
+<link rel="icon" href="ikona.png">
+<title>Bleskový souboj</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b0d26;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;
+  font-family:ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,"Courier New",monospace;color:#dfe6ff}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges}
+button{font:inherit;cursor:pointer;border:0}
+.hidden{display:none!important}
+#bg{position:fixed;inset:0;width:100%;height:100%}
+.half{z-index:1;position:fixed;left:0;right:0;height:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:14px 18px;transition:background .08s}
+.half.top{top:0;transform:rotate(180deg);--ins:env(safe-area-inset-top);padding-bottom:calc(44px + env(safe-area-inset-top))}
+.half.bot{bottom:0;--ins:env(safe-area-inset-bottom);padding-bottom:calc(44px + env(safe-area-inset-bottom))}
+.half.red{background:#4a1630}.half.green{background:#145c3a}.half.win{background:#5a4a12}.half.bad{background:#3a0f1c}
+.pips{display:flex;gap:6px;position:absolute;bottom:calc(16px + var(--ins));left:50%;transform:translateX(-50%)}
+.pip{width:14px;height:14px;background:#232a63;box-shadow:0 0 0 2px #0b0d26}
+.pip.on{background:#ffd166;box-shadow:0 0 0 2px #0b0d26,0 0 0 4px #ffd166}
+.who{position:absolute;bottom:calc(16px + var(--ins));left:18px;width:14px;height:14px}
+.title{font-size:13px;letter-spacing:2px;color:#8fa0d8;text-transform:uppercase}
+.main{font-size:30px;font-weight:900;letter-spacing:2px;text-align:center;text-shadow:3px 3px 0 #05061a;line-height:1.15;max-width:100%}
+.sub{font-size:13px;color:#a7b2dc;text-align:center;line-height:1.5;max-width:300px}
+.word{font-size:40px;font-weight:900;letter-spacing:3px;text-shadow:4px 4px 0 #05061a}
+.btns{display:flex;gap:14px}
+.ans{--k:#5ee7ff;min-width:96px;padding:12px 10px;font-size:26px;font-weight:900;color:#0b0d26;background:var(--k);margin:4px;
+  box-shadow:0 -4px 0 0 var(--k),0 4px 0 0 var(--k),-4px 0 0 0 var(--k),4px 0 0 0 var(--k),inset 0 -5px 0 0 rgba(0,0,0,.28)}
+.ans:active{transform:translate(2px,2px)}
+.ans.off{opacity:.25}
+.ans canvas{display:block;width:44px;height:40px;margin:0 auto}
+.alienbox{background:#151a44;box-shadow:0 0 0 4px #2c3778}
+#rope{position:fixed;left:50%;top:0;bottom:0;width:8px;margin-left:-4px;background:repeating-linear-gradient(180deg,#c8a060 0 6px,#8a6a3a 6px 12px);pointer-events:none}
+#knot{position:absolute;left:-10px;width:28px;height:20px;background:#ffd166;box-shadow:0 0 0 3px #0b0d26,0 0 0 6px #ffd166;transition:top .06s}
+#rope .goal{position:absolute;left:-30px;width:68px;height:4px;background:#ff6b6b}
+#mid{position:fixed;left:0;right:0;top:50%;height:6px;margin-top:-3px;background:repeating-linear-gradient(90deg,#2c3778 0 10px,#0b0d26 10px 16px);pointer-events:none}
+.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:rgba(8,9,30,.94);z-index:3;text-align:center}
+h1{margin:0;font-size:28px;letter-spacing:2px;color:#ffd166;text-shadow:3px 3px 0 #05061a;text-transform:uppercase}
+p{margin:0;color:#a7b2dc;font-size:13px;line-height:1.55;max-width:320px}
+.list{font-size:12.5px;color:#a7b2dc;line-height:1.7;text-align:left}
+.list b{color:#ffd166}
+.btn{--k:#ffd166;width:250px;padding:13px;font-size:15px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#0b0d26;background:var(--k);margin:4px;
+  box-shadow:0 -4px 0 0 var(--k),0 4px 0 0 var(--k),-4px 0 0 0 var(--k),4px 0 0 0 var(--k),inset 0 -5px 0 0 rgba(0,0,0,.28)}
+.btn:active{transform:translate(2px,2px)}
+.btn.b{--k:#5ee7ff}.btn.g{--k:#2c3778;color:#dfe6ff}
+.diff{display:flex;gap:6px}
+.diff button{padding:7px 10px;background:#151a44;color:#8fa0d8;font-weight:800;font-size:12px;box-shadow:0 0 0 3px #2c3778}
+.diff button.on{background:#ffd166;color:#0b0d26;box-shadow:0 0 0 3px #ffd166}
+.ehalf{position:absolute;left:0;right:0;height:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.ehalf.top{top:0;transform:rotate(180deg)}.ehalf.bot{bottom:0}
+.big{font-size:30px;font-weight:900;letter-spacing:2px;text-shadow:3px 3px 0 #05061a}
+#homeBtn{position:fixed;z-index:2;width:38px;height:38px;background:#151a44;color:#dfe6ff;font-size:16px;font-weight:900;box-shadow:0 0 0 3px #2c3778;left:10px;top:50%;margin-top:-19px}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="half top" id="h1"></div>
+<div class="half bot" id="h0"></div>
+<div id="mid"></div>
+<div id="rope" class="hidden"><div class="goal" style="top:10%"></div><div class="goal" style="top:90%"></div><div id="knot"></div></div>
+<button id="homeBtn" aria-label="Menu">⌂</button>
+
+<div class="overlay" id="menu">
+  <h1>⚡ Bleskový souboj</h1>
+  <p>Rychlé výzvy pro dva. Každý drží svou stranu telefonu. Kdo první získá <b>5 bodů</b>, vyhrává.</p>
+  <div class="list">
+    🟢 <b>Zelená!</b> – klepni, až zezelená. Moc brzy = bod pro soupeře.<br>
+    🪢 <b>Přetahovaná</b> – ťukej co nejrychleji.<br>
+    👾 <b>Kterých je víc?</b> – spočítej mimozemšťany.<br>
+    🎨 <b>Barvy</b> – klepni, až slovo má stejnou barvu.<br>
+    🧮 <b>Počty</b> – vyber správný výsledek.
+  </div>
+  <button class="btn" id="p2Btn">👥 Dva hráči</button>
+  <button class="btn b" id="aiBtn">🤖 Proti počítači</button>
+  <div class="diff" id="diff"><button data-d="0">LEHKÝ</button><button data-d="1" class="on">STŘEDNÍ</button><button data-d="2">TĚŽKÝ</button></div>
+  <button class="btn g" id="backBtn">⌂ Zpět do menu</button>
+</div>
+
+<div class="overlay hidden" id="end" style="padding:0">
+  <div class="ehalf top"><div class="big" id="endTop"></div><div id="serTop" style="font-size:13px;color:#a7b2dc"></div></div>
+  <div class="ehalf bot"><div class="big" id="endBot"></div><div id="serBot" style="font-size:13px;color:#a7b2dc"></div>
+    <button class="btn" id="againBtn">↻ Odveta</button><button class="btn g" id="menuBtn">Menu</button></div>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const GOAL = 5;
+const H = [$('h0'), $('h1')];           // 0 = dole, 1 = nahoře
+const PC = ['#ff6b6b', '#5ee7ff'];
+let mode = 'menu', vsAI = false, diff = 1, score = [0, 0], series = [0, 0];
+let round = null, timers = [], bag = [], aiTimers = [];
+
+// ---------- zvuk ----------
+let AC = null;
+function audioInit(){ if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {} } if (AC && AC.state === 'suspended') AC.resume(); }
+function snd(f, d, v, type = 'square', slide = 0){
+  if (!AC) return; const t = AC.currentTime, osc = AC.createOscillator(), g = AC.createGain();
+  osc.type = type; osc.frequency.setValueAtTime(f, t); if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + d); osc.connect(g); g.connect(AC.destination); osc.start(t); osc.stop(t + d);
+}
+const later = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
+const aiLater = (fn, ms) => { const id = setTimeout(fn, ms); aiTimers.push(id); return id; };
+function clearAll(){ timers.forEach(clearTimeout); aiTimers.forEach(clearTimeout); timers = []; aiTimers = []; }
+
+// ---------- pixelový mimozemšťan ----------
+const ALIEN = ["..a.....a..", "...a...a...", "..aaaaaaa..", ".aa.aaa.aa.", "aaaaaaaaaaa", "a.aaaaaaa.a", "a.a.....a.a", "...aa.aa..."];
+const AL_C = { g: '#7dffa8', p: '#c58bff' };
+function alienCanvas(col, scale = 4){
+  const c = document.createElement('canvas'); c.width = 11 * scale; c.height = 8 * scale; const g = c.getContext('2d');
+  ALIEN.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === 'a') { g.fillStyle = col; g.fillRect(x * scale, y * scale, scale, scale); } }));
+  g.fillStyle = '#0b0d26'; g.fillRect(4 * scale, 3 * scale, scale, scale); g.fillRect(6 * scale, 3 * scale, scale, scale);
+  return c;
+}
+
+// ---------- vykreslení polovin ----------
+function pips(i){ return '<div class="who" style="background:' + PC[i] + '"></div><div class="pips">' + Array.from({ length: GOAL }, (_, k) => '<div class="pip' + (k < score[i] ? ' on' : '') + '"></div>').join('') + '</div>'; }
+function setHalf(i, html, cls = ''){ H[i].className = 'half ' + (i ? 'top' : 'bot') + (cls ? ' ' + cls : ''); H[i].innerHTML = pips(i) + html; }
+function both(fn){ for (const i of [0, 1]) fn(i); }
+function nameOf(i){ return vsAI ? (i === 0 ? 'Ty' : 'Počítač') : (i === 0 ? 'Červený' : 'Modrý'); }
+
+// ---------- kola ----------
+const TYPES = ['zelena', 'pretah', 'vic', 'barvy', 'pocty'];
+const INFO = {
+  zelena: ['ZELENÁ!', 'Klepni na svou půlku, až zezelená. Ne dřív!'],
+  pretah: ['PŘETAHOVANÁ', 'Ťukej na svou půlku co nejrychleji a přetáhni lano k sobě!'],
+  vic:    ['KTERÝCH JE VÍC?', 'Podívej se a vyber barvu, které je víc.'],
+  barvy:  ['BARVY', 'Klepni, až má slovo STEJNOU barvu, jakou říká.'],
+  pocty:  ['POČTY', 'Vyber správný výsledek.']
+};
+function nextType(){ if (!bag.length) { bag = TYPES.slice().sort(() => Math.random() - .5); if (round && bag[0] === round.type) bag.push(bag.shift()); } return bag.shift(); }
+
+function intro(){
+  clearAll(); clearTaps(); $('rope').classList.add('hidden');
+  const type = nextType(); round = { type, done: false, locked: [false, false] };
+  const [t, s] = INFO[type];
+  both(i => setHalf(i, '<div class="title">Kolo ' + (score[0] + score[1] + 1) + '</div><div class="main">' + t + '</div><div class="sub">' + s + '</div>'));
+  snd(330, 0.1, 0.05); later(() => snd(440, 0.1, 0.05), 120);
+  later(() => START[type](), 2200);
+}
+function point(w, why){
+  if (round.done) return; round.done = true; clearAll(); clearTaps();
+  score[w]++;
+  $('rope').classList.add('hidden');
+  both(i => setHalf(i, '<div class="main">' + (i === w ? 'BOD! ⭐' : (vsAI && i === 1 ? '' : 'Bod pro soupeře')) + '</div><div class="sub">' + (why || '') + '</div>', i === w ? 'win' : ''));
+  snd(660, 0.1, 0.07); later(() => snd(990, 0.18, 0.07), 100);
+  try { navigator.vibrate && navigator.vibrate(50); } catch (_) {}
+  later(() => { if (score[w] >= GOAL) endGame(w); else intro(); }, 1500);
+}
+function noPoint(why){
+  if (round.done) return; round.done = true; clearAll(); clearTaps();
+  both(i => setHalf(i, '<div class="main">NIKDO 🤷</div><div class="sub">' + why + '</div>'));
+  later(intro, 1500);
+}
+function tapHalf(i, fn){ H[i].onpointerdown = e => { if (e.target.closest('button')) return; fn(e); }; }
+function clearTaps(){ both(i => { H[i].onpointerdown = null; }); }
+
+const START = {
+  // ---- ZELENÁ ----
+  zelena(){
+    both(i => setHalf(i, '<div class="main">POČKEJ…</div><div class="sub">Klepni, až zezelená</div>', 'red'));
+    let green = false, t0 = 0;
+    both(i => tapHalf(i, () => {
+      if (round.done) return;
+      if (!green) { point(1 - i, nameOf(i) + ' klepl moc brzy!'); snd(150, 0.3, 0.08, 'sawtooth', -60); }
+      else point(i, 'Reakce ' + Math.round(performance.now() - t0) + ' ms');
+    }));
+    later(() => {
+      green = true; t0 = performance.now();
+      both(i => setHalf(i, '<div class="main">TEĎ! ⚡</div>', 'green'));
+      both(i => tapHalf(i, () => { if (!round.done) point(i, 'Reakce ' + Math.round(performance.now() - t0) + ' ms'); }));
+      snd(880, 0.12, 0.08);
+      if (vsAI) aiLater(() => { if (!round.done) point(1, 'Reakce počítače ' + Math.round(performance.now() - t0) + ' ms'); }, [520, 380, 290][diff] + Math.random() * 160);
+    }, 1500 + Math.random() * 3000);
+    if (vsAI && Math.random() < [0.12, 0.06, 0.02][diff]) aiLater(() => { if (!round.done && !green) point(0, 'Počítač klepl moc brzy!'); }, 700 + Math.random() * 900);
+  },
+  // ---- PŘETAHOVANÁ ----
+  pretah(){
+    let pos = 0; // -1 = dole vyhrál, +1 = nahoře vyhrál
+    const knot = $('knot'); $('rope').classList.remove('hidden');
+    const show = () => { knot.style.top = 'calc(' + (50 - pos * 40) + '% - 10px)'; };
+    show();
+    both(i => setHalf(i, '<div style="background:#151a44;padding:10px 16px;box-shadow:0 0 0 4px #2c3778;position:relative;z-index:2"><div class="main">ŤUKEJ! 💪</div><div class="sub">Přetáhni žlutý uzel k sobě</div></div>'));
+    const pull = i => {
+      if (round.done) return;
+      pos += (i === 0 ? -1 : 1) * 0.055; show();
+      snd(i ? 300 : 360, 0.03, 0.03);
+      if (pos <= -1) point(0, 'Silák!'); else if (pos >= 1) point(1, 'Silák!');
+    };
+    both(i => tapHalf(i, () => pull(i)));
+    if (vsAI) { const rate = [5.5, 7.5, 9.5][diff]; const tick = () => { if (round.done) return; pull(1); aiLater(tick, 1000 / rate * (0.75 + Math.random() * 0.5)); }; aiLater(tick, 400); }
+  },
+  // ---- KTERÝCH JE VÍC ----
+  vic(){
+    let ng = 3 + (Math.random() * 6 | 0), np = 3 + (Math.random() * 6 | 0);
+    if (ng === np) Math.random() < .5 ? ng++ : np++;
+    const ans = ng > np ? 'g' : 'p';
+    const W = Math.min(320, innerWidth - 50), Hh = 150, pos = [];
+    const list = [...Array(ng).fill('g'), ...Array(np).fill('p')].sort(() => Math.random() - .5);
+    const cw = 38, ch = 29, cols = Math.floor((W - 6) / cw), rows = Math.floor((Hh - 6) / ch);
+    const cells = []; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push([c, r]);
+    cells.sort(() => Math.random() - .5);
+    const ox = (W - cols * cw) / 2, oy = (Hh - rows * ch) / 2;
+    list.forEach((c, k) => { const [cc, rr] = cells[k]; pos.push({ x: ox + cc * cw + 2 + Math.random() * 3, y: oy + rr * ch + 2 + Math.random() * 3, c }); });
+    const draw = cvs => { const g = cvs.getContext('2d'); g.imageSmoothingEnabled = false; g.fillStyle = '#151a44'; g.fillRect(0, 0, W, Hh); for (const q of pos) g.drawImage(alienCanvas(AL_C[q.c], 3), Math.round(q.x), Math.round(q.y)); };
+    both(i => {
+      setHalf(i, '<canvas class="alienbox" width="' + W + '" height="' + Hh + '" style="width:' + W + 'px;height:' + Hh + 'px"></canvas><div class="btns"><button class="ans" data-a="g" style="--k:#7dffa8"></button><button class="ans" data-a="p" style="--k:#c58bff"></button></div>');
+      draw(H[i].querySelector('canvas'));
+      H[i].querySelectorAll('.ans').forEach(b => { const a = alienCanvas('#0b0d26', 4); b.appendChild(a); b.onclick = () => answer(i, b.dataset.a, b); });
+    });
+    const answer = (i, a, b) => {
+      if (round.done || round.locked[i]) return;
+      if (a === ans) point(i, 'Zelených ' + ng + ', fialových ' + np);
+      else { round.locked[i] = true; H[i].querySelectorAll('.ans').forEach(x => x.classList.add('off')); snd(150, 0.25, 0.07, 'sawtooth', -50);
+        if (round.locked[0] && round.locked[1]) noPoint('Oba jste se spletli. Zelených ' + ng + ', fialových ' + np); }
+    };
+    if (vsAI) aiLater(() => answer(1, Math.random() < [0.7, 0.85, 0.95][diff] ? ans : (ans === 'g' ? 'p' : 'g'), null), [2600, 1900, 1300][diff] + Math.random() * 900 + (Math.abs(ng - np) < 2 ? 600 : 0));
+  },
+  // ---- BARVY ----
+  barvy(){
+    const C = [['ČERVENÁ', '#ff6b6b'], ['MODRÁ', '#5ee7ff'], ['ZELENÁ', '#7dffa8'], ['ŽLUTÁ', '#ffd166'], ['FIALOVÁ', '#c58bff']];
+    let match = false, count = 0; const until = 2 + (Math.random() * 4 | 0);
+    const step = () => {
+      if (round.done) return;
+      count++;
+      const w = C[Math.random() * C.length | 0];
+      let ink = w[1];
+      if (count < until || (count > until && Math.random() < .65)) { do { ink = C[Math.random() * C.length | 0][1]; } while (ink === w[1]); }
+      match = ink === w[1];
+      both(i => setHalf(i, '<div class="title">Klepni, když barva sedí</div><div class="word" style="color:' + ink + '">' + w[0] + '</div>'));
+      snd(match ? 520 : 400, 0.04, 0.03);
+      if (vsAI && match && Math.random() < [0.75, 0.9, 0.97][diff]) aiLater(() => { if (!round.done && match) tap(1); }, [850, 650, 470][diff] + Math.random() * 200);
+      if (count > 14) return noPoint('Nikdo nestihl klepnout.');
+      later(step, [1250, 1100, 1000][diff]);
+    };
+    const tap = i => {
+      if (round.done) return;
+      if (match) point(i, 'Barva seděla!');
+      else { point(1 - i, nameOf(i) + ' klepl na špatnou barvu!'); snd(150, 0.3, 0.08, 'sawtooth', -60); }
+    };
+    both(i => tapHalf(i, () => tap(i)));
+    if (vsAI && Math.random() < [0.12, 0.06, 0.02][diff]) aiLater(() => { if (!round.done && !match) tap(1); }, 1500 + Math.random() * 2500);
+    step();
+  },
+  // ---- POČTY ----
+  pocty(){
+    let a, b, op, res;
+    const r = Math.random();
+    if (r < 0.45) { a = 2 + (Math.random() * 15 | 0); b = 2 + (Math.random() * 12 | 0); op = '+'; res = a + b; }
+    else if (r < 0.8) { a = 8 + (Math.random() * 15 | 0); b = 1 + (Math.random() * (a - 2) | 0); op = '−'; res = a - b; }
+    else { a = 2 + (Math.random() * 8 | 0); b = 2 + (Math.random() * 8 | 0); op = '×'; res = a * b; }
+    let wrong; do { wrong = res + [-3, -2, -1, 1, 2, 3, 10, -10][Math.random() * 8 | 0]; } while (wrong < 0 || wrong === res);
+    const opts = Math.random() < .5 ? [res, wrong] : [wrong, res];
+    both(i => {
+      setHalf(i, '<div class="word">' + a + ' ' + op + ' ' + b + '</div><div class="btns">' + opts.map((v, k) => '<button class="ans" style="--k:' + (k ? '#ffd166' : '#5ee7ff') + '" data-v="' + v + '">' + v + '</button>').join('') + '</div>');
+      H[i].querySelectorAll('.ans').forEach(btn => btn.onclick = () => answer(i, +btn.dataset.v));
+    });
+    const answer = (i, v) => {
+      if (round.done || round.locked[i]) return;
+      if (v === res) point(i, a + ' ' + op + ' ' + b + ' = ' + res);
+      else { round.locked[i] = true; H[i].querySelectorAll('.ans').forEach(x => x.classList.add('off')); snd(150, 0.25, 0.07, 'sawtooth', -50);
+        if (round.locked[0] && round.locked[1]) noPoint('Správně bylo ' + res); }
+    };
+    if (vsAI) aiLater(() => answer(1, Math.random() < [0.7, 0.85, 0.95][diff] ? res : wrong), [3000, 2200, 1500][diff] + Math.random() * 1000);
+  }
+};
+
+// ---------- konec ----------
+function endGame(w){
+  mode = 'end'; clearAll(); clearTaps(); series[w]++;
+  const win = 'VÝHRA! 🏆', lose = 'PROHRA ⚡';
+  if (vsAI) { $('endBot').textContent = w === 0 ? win : 'Počítač vyhrál 🤖'; $('endTop').textContent = ''; }
+  else { $('endBot').textContent = w === 0 ? win : lose; $('endTop').textContent = w === 1 ? win : lose; }
+  $('endBot').style.color = w === 0 ? '#ffd166' : '#ff6b6b'; $('endTop').style.color = w === 1 ? '#ffd166' : '#ff6b6b';
+  $('serBot').textContent = 'Skóre ' + score[0] + ' : ' + score[1] + ' · série ' + series[0] + ' : ' + series[1];
+  $('serTop').textContent = vsAI ? '' : 'Skóre ' + score[1] + ' : ' + score[0] + ' · série ' + series[1] + ' : ' + series[0];
+  $('end').classList.remove('hidden');
+  snd(523, .15, .07); setTimeout(() => snd(659, .15, .07), 150); setTimeout(() => snd(784, .3, .07), 300);
+}
+function start(ai){
+  if (ai !== vsAI) series = [0, 0];
+  vsAI = ai; mode = 'play'; score = [0, 0]; bag = []; round = null; audioInit();
+  ['menu', 'end'].forEach(id => $(id).classList.add('hidden'));
+  intro();
+}
+function toMenu(){ mode = 'menu'; clearAll(); clearTaps(); $('rope').classList.add('hidden'); $('end').classList.add('hidden'); $('menu').classList.remove('hidden'); }
+$('p2Btn').onclick = () => start(false);
+$('aiBtn').onclick = () => start(true);
+$('diff').onclick = e => { const b = e.target.closest('button'); if (!b) return; diff = +b.dataset.d; [...$('diff').children].forEach(x => x.classList.toggle('on', x === b)); };
+$('againBtn').onclick = () => start(vsAI);
+$('menuBtn').onclick = toMenu;
+$('backBtn').onclick = () => { location.href = '../../index.html'; };
+$('homeBtn').onclick = () => { if (mode === 'play') toMenu(); else location.href = '../../index.html'; };
+document.addEventListener('pointerdown', audioInit, { once: true });
+
+// ---------- pixelové hvězdy v pozadí ----------
+const bg = $('bg'), bc = bg.getContext('2d'); let st = [];
+function bgSize(){ bg.width = Math.ceil(innerWidth / 3); bg.height = Math.ceil(innerHeight / 3); st = Array.from({ length: 60 }, () => ({ x: Math.random() * bg.width, y: Math.random() * bg.height, c: Math.random() < .3 ? '#5f6cb8' : '#2c3570' })); }
+function bgDraw(){ bc.fillStyle = '#0b0d26'; bc.fillRect(0, 0, bg.width, bg.height); for (const s of st) { s.x += 0.05; if (s.x > bg.width) s.x = 0; bc.fillStyle = s.c; bc.fillRect(s.x | 0, s.y | 0, 1, 1); } requestAnimationFrame(bgDraw); }
+addEventListener('resize', bgSize); bgSize(); bgDraw();
+both(i => setHalf(i, ''));
+try { if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('../../sw.js', { updateViaCache: 'none' }).catch(() => {}); } catch (_) {}
+})();
+</script>
+</body>
+</html>

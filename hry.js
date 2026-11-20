@@ -1,7 +1,7 @@
 // ===== SEZNAM HER V HERNĚ =====
 // Novou hru přidáš tak, že ji dáš do složky hry/<nazev>/ a připíšeš ji sem.
 // Po každé změně zvyš VERZE o 1, aby si telefon stáhl novinky.
-self.HERNA_VERZE = 4;
+self.HERNA_VERZE = 5;
 self.HERNA_HRY = [
   {
     id: 'neon-najezd',
@@ -46,5 +46,36 @@ self.HERNA_HRY = [
     barva: '#ffb020',
     soubory: ['hry/ctyri/', 'hry/ctyri/index.html', 'hry/ctyri/ikona.png']
 
+  }
+  ,
+  {
+    id: 'souboj',
+    nove: true,
+    nazev: 'Vesmírný souboj',
+    popis: 'Dvě lodě proti sobě. Uhýbej, střílej asteroidy a sbírej bonusy.',
+    hraci: 2,
+    ikona: 'hry/souboj/ikona.png',
+    barva: '#5ee7ff',
+    soubory: ['hry/souboj/', 'hry/souboj/index.html', 'hry/souboj/ikona.png']
+  },
+  {
+    id: 'sumo',
+    nove: true,
+    nazev: 'Pixel Sumo',
+    popis: 'Vystrč soupeře z plošiny, která se zmenšuje. Ťuknutím uděláš náraz.',
+    hraci: 2,
+    ikona: 'hry/sumo/ikona.png',
+    barva: '#ff9a5c',
+    soubory: ['hry/sumo/', 'hry/sumo/index.html', 'hry/sumo/ikona.png']
+  },
+  {
+    id: 'blesk',
+    nove: true,
+    nazev: 'Bleskový souboj',
+    popis: 'Pět rychlých výzev: reakce, přetahovaná, počítání, barvy a příklady.',
+    hraci: 2,
+    ikona: 'hry/blesk/ikona.png',
+    barva: '#ffd166',
+    soubory: ['hry/blesk/', 'hry/blesk/index.html', 'hry/blesk/ikona.png']
   }
 ];
