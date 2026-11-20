@@ -47,6 +47,8 @@ button{font:inherit;cursor:pointer;border:0}
 .link{display:block;margin:22px auto 0;padding:12px 16px;color:#0b0d26;background:#5ee7ff;font-weight:900;font-size:13px;letter-spacing:1px;text-transform:uppercase;box-shadow:0 -4px 0 0 #5ee7ff,0 4px 0 0 #5ee7ff,-4px 0 0 0 #5ee7ff,4px 0 0 0 #5ee7ff,inset 0 -5px 0 0 #2aa9c9}
 .link:active{transform:translate(2px,2px)}
 .link.hidden{display:none}
+.ver{margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:11.5px;color:#6f7bb5}
+.ver button{padding:8px 12px;background:#151a44;color:#9fb0ff;font-weight:800;font-size:12px;box-shadow:0 0 0 3px #2c3778}
 .save{margin-top:16px;text-align:center;font-size:11.5px;color:#7884bd;line-height:1.6}
 .modal{position:fixed;inset:0;background:rgba(5,6,20,.85);display:flex;align-items:center;justify-content:center;padding:22px;z-index:5}
 .modal.hidden{display:none}
@@ -68,6 +70,7 @@ button{font:inherit;cursor:pointer;border:0}
   <div class="soon">▒ DALŠÍ HRY SE PŘIPRAVUJÍ ▒</div>
   <button class="link" id="installBtn">▶ Jak dát hru na plochu</button>
   <div class="save">💾 Ve hrách s delším postupem se tvůj postup ukládá sám.</div>
+  <div class="ver"><span id="verT"></span><button id="updBtn">↻ Zkontrolovat aktualizace</button></div>
 </div>
 
 <div class="modal hidden" id="help">
@@ -203,6 +206,34 @@ $('installBtn').onclick = () => {
   $('help').classList.remove('hidden');
 };
 $('helpClose').onclick = () => $('help').classList.add('hidden');
+
+// ---------- aktualizace ----------
+$('verT').textContent = 'Verze ' + self.HERNA_VERZE;
+async function vynutAktualizaci(){
+  $('updBtn').textContent = 'Stahuju novou verzi…';
+  try { const r = await navigator.serviceWorker.getRegistrations(); await Promise.all(r.map(x => x.unregister())); } catch (e) {}
+  try { const k = await caches.keys(); await Promise.all(k.map(x => caches.delete(x))); } catch (e) {}
+  try { await Promise.all(['./', 'index.html', 'hry.js', 'sw.js'].map(u => fetch(u, { cache: 'reload' }).catch(() => {}))); } catch (e) {}
+  location.replace(location.pathname + '?v=' + Date.now());
+}
+async function zjistiVerzi(){
+  try {
+    const t = await (await fetch('hry.js?nc=' + Date.now(), { cache: 'no-store' })).text();
+    const m = t.match(/HERNA_VERZE\s*=\s*(\d+)/); return m ? +m[1] : null;
+  } catch (e) { return null; }
+}
+$('updBtn').onclick = async () => {
+  if (!navigator.onLine) { $('updBtn').textContent = 'Jsi offline – připoj se k internetu'; return; }
+  $('updBtn').textContent = 'Kontroluju…';
+  const v = await zjistiVerzi();
+  if (v == null) { $('updBtn').textContent = 'Nepodařilo se spojit, zkus to znovu'; return; }
+  if (v > self.HERNA_VERZE) vynutAktualizaci();
+  else { $('updBtn').textContent = '✓ Máš nejnovější verzi'; }
+};
+// samo se zkontroluje při otevření s internetem
+let nedavno = 0; try { nedavno = +sessionStorage.getItem('herna_upd') || 0; } catch (e) {}
+if (navigator.onLine && /^https?:$/.test(location.protocol) && Date.now() - nedavno > 15 * 60 * 1000)
+  zjistiVerzi().then(v => { if (v && v > self.HERNA_VERZE) { try { sessionStorage.setItem('herna_upd', Date.now()); } catch (e) {} vynutAktualizaci(); } });
 
 addEventListener('resize', () => { drawTitle(); skyResize(); });
 drawTitle(); skyResize(); skyDraw();
