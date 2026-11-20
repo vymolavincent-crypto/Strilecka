@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#fff6e3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Herna">
+<link rel="manifest" href="../../manifest.webmanifest">
+<link rel="icon" href="ikona.svg">
+<title>Čtyři v řadě</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;touch-action:manipulation}
+body{font-family:ui-rounded,"SF Pro Rounded","Nunito",system-ui,-apple-system,sans-serif;color:#3a3350;background:linear-gradient(180deg,#fff6e3,#ffeef4);
+  display:flex;flex-direction:column;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 10px calc(14px + env(safe-area-inset-bottom));overflow:hidden}
+button{font:inherit;cursor:pointer;border:0}
+.top{width:100%;max-width:520px;display:flex;align-items:center;gap:8px}
+.round{width:42px;height:42px;border-radius:50%;background:#fff;color:#5b5275;font-size:18px;font-weight:800;box-shadow:0 4px 12px -6px rgba(60,40,100,.5);flex:none}
+h1{flex:1;margin:0;text-align:center;font-size:22px;font-weight:800;color:#2f2843}
+.mode{display:flex;gap:4px;background:#fff;padding:4px;border-radius:14px;margin:10px 0 8px;box-shadow:0 4px 12px -8px rgba(60,40,100,.5)}
+.mode button{padding:8px 14px;border-radius:10px;background:transparent;color:#7d7594;font-weight:700;font-size:14px}
+.mode button.on{background:#ffb020;color:#fff}
+.score{display:flex;align-items:center;gap:12px;font-size:15px;font-weight:700;margin-bottom:8px}
+.pl{display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:12px;background:#fff;opacity:.55;transition:.2s}
+.pl.on{opacity:1;box-shadow:0 0 0 3px var(--c),0 6px 14px -8px var(--c);transform:scale(1.05)}
+.pl i{width:18px;height:18px;border-radius:50%;background:var(--c);display:inline-block}
+#msg{height:24px;font-size:16px;font-weight:700;color:#5b5275;margin-bottom:8px;text-align:center}
+#wrap{position:relative}
+#board{position:relative;display:grid;grid-template-columns:repeat(7,var(--s));grid-auto-rows:var(--s);gap:var(--g);padding:var(--g);background:#4d96ff;border-radius:20px;box-shadow:0 14px 28px -14px #2f74db}
+.hole{border-radius:50%;background:#eaf3ff;box-shadow:inset 0 3px 6px rgba(20,60,140,.25)}
+.disc{position:absolute;width:var(--s);height:var(--s);border-radius:50%;pointer-events:none;box-shadow:inset 0 -4px 0 rgba(0,0,0,.15),inset 0 3px 0 rgba(255,255,255,.35)}
+.disc.r{background:#ff6b6b}.disc.y{background:#ffc531}
+.disc.win{animation:glow .7s ease-in-out infinite alternate}
+@keyframes glow{to{transform:scale(.82);box-shadow:0 0 0 5px #fff,0 0 18px 4px #fff}}
+.col{position:absolute;top:0;bottom:0;cursor:pointer}
+#ghost{position:absolute;width:var(--s);height:var(--s);border-radius:50%;opacity:.35;pointer-events:none;transition:left .1s}
+.bottom{display:flex;gap:10px;margin-top:16px}
+.act{padding:11px 18px;border-radius:14px;background:#fff;color:#5b5275;font-weight:800;font-size:15px;box-shadow:0 6px 14px -10px rgba(60,40,100,.6)}
+.act.main{background:#ffb020;color:#fff}
+</style>
+</head>
+<body>
+<div class="top">
+  <button class="round" id="homeBtn" aria-label="Herna">⌂</button>
+  <h1>Čtyři v řadě</h1>
+  <div style="width:42px"></div>
+</div>
+<div class="mode" id="mode"><button data-m="2" class="on">👥 Dva hráči</button><button data-m="ai">🤖 Počítač</button></div>
+<div class="score">
+  <div class="pl" id="plR" style="--c:#ff6b6b"><i></i><span id="nR">Hráč 1</span> <span id="sR">0</span></div>
+  <div class="pl" id="plY" style="--c:#ffc531"><i></i><span id="nY">Hráč 2</span> <span id="sY">0</span></div>
+</div>
+<div id="msg"></div>
+<div id="wrap"><div id="board"></div></div>
+<div class="bottom">
+  <button class="act" id="undoBtn">↶ Zpět tah</button>
+  <button class="act main" id="newBtn">↻ Nová hra</button>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const C = 7, R = 6, AI = 'y';
+let g, moves, turn, over, vsAI = false, starter = 'r', score = { r: 0, y: 0 }, S = 44, G = 6, busy = false;
+const discEls = {};
+
+function layout(){
+  const avW = Math.min(innerWidth - 20, 520), avH = innerHeight - $('wrap').getBoundingClientRect().top - 90;
+  S = Math.floor(Math.min((avW - 8 * 6) / C, (avH - 7 * 6) / R, 70)); G = Math.max(4, Math.round(S * 0.12));
+  S = Math.floor(Math.min((avW - 8 * G) / C, (avH - 7 * G) / R, 70));
+  document.body.style.setProperty('--s', S + 'px'); document.body.style.setProperty('--g', G + 'px');
+  for (const k in discEls) { const [c, r] = k.split(',').map(Number); pos(discEls[k], c, r); }
+  buildCols();
+}
+function pos(el, c, r){ el.style.left = (G + c * (S + G)) + 'px'; el.style.top = (G + (R - 1 - r) * (S + G)) + 'px'; }
+function buildHoles(){ $('board').innerHTML = ''; for (let i = 0; i < C * R; i++) { const h = document.createElement('div'); h.className = 'hole'; $('board').appendChild(h); } }
+function buildCols(){
+  document.querySelectorAll('.col').forEach(e => e.remove());
+  for (let c = 0; c < C; c++) {
+    const d = document.createElement('div'); d.className = 'col'; d.dataset.c = c;
+    d.style.left = (G / 2 + c * (S + G)) + 'px'; d.style.width = (S + G) + 'px';
+    $('board').appendChild(d);
+  }
+}
+function newGame(){
+  g = Array.from({ length: C }, () => []); moves = []; over = false; turn = starter; busy = false;
+  for (const k in discEls) { discEls[k].remove(); delete discEls[k]; }
+  update();
+  if (vsAI && turn === AI) setTimeout(aiMove, 450);
+}
+const name = p => vsAI ? (p === AI ? 'Počítač' : 'Ty') : (p === 'r' ? 'Hráč 1' : 'Hráč 2');
+function update(){
+  $('nR').textContent = name('r'); $('nY').textContent = name('y'); $('sR').textContent = score.r; $('sY').textContent = score.y;
+  $('plR').classList.toggle('on', !over && turn === 'r'); $('plY').classList.toggle('on', !over && turn === 'y');
+  if (!over) $('msg').textContent = vsAI ? (turn === AI ? 'Počítač přemýšlí…' : 'Jsi na tahu – klepni na sloupec') : 'Na tahu: ' + name(turn);
+  $('undoBtn').style.opacity = moves.length ? 1 : .5;
+}
+function at(c, r){ return c >= 0 && c < C && r >= 0 && r < R ? (g[c][r] || '') : ''; }
+function winLine(c, r, p){
+  for (const [dc, dr] of [[1,0],[0,1],[1,1],[1,-1]]) {
+    const L = [[c, r]];
+    for (const s of [1, -1]) { let cc = c + dc * s, rr = r + dr * s; while (at(cc, rr) === p) { L.push([cc, rr]); cc += dc * s; rr += dr * s; } }
+    if (L.length >= 4) return L;
+  }
+  return null;
+}
+let AC = null;
+function beep(f, d, v = 0.12){ try { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume();
+  const t = AC.currentTime, o = AC.createOscillator(), gn = AC.createGain(); o.type = 'triangle'; o.frequency.value = f; gn.gain.setValueAtTime(v, t); gn.gain.exponentialRampToValueAtTime(0.001, t + d); o.connect(gn); gn.connect(AC.destination); o.start(t); o.stop(t + d); } catch (_) {} }
+
+function drop(c){
+  if (over || busy || g[c].length >= R) return;
+  const r = g[c].length, p = turn;
+  g[c].push(p); moves.push(c);
+  const d = document.createElement('div'); d.className = 'disc ' + p;
+  pos(d, c, r); const endTop = d.style.top;
+  d.style.top = (-S - G) + 'px'; $('board').appendChild(d); discEls[c + ',' + r] = d;
+  const dist = (R - r) * (S + G) + S;
+  d.animate([{ top: (-S - G) + 'px' }, { top: endTop, offset: .8 }, { top: (parseFloat(endTop) - S * .12) + 'px', offset: .9 }, { top: endTop }],
+            { duration: 180 + dist * 0.9, easing: 'ease-in' });
+  d.style.top = endTop;
+  busy = true;
+  setTimeout(() => {
+    busy = false; beep(p === 'r' ? 360 : 300, 0.09);
+    const w = winLine(c, r, p);
+    if (w) {
+      over = true; score[p]++; starter = starter === 'r' ? 'y' : 'r';
+      w.forEach(([cc, rr]) => discEls[cc + ',' + rr].classList.add('win'));
+      $('msg').textContent = vsAI ? (p === AI ? 'Počítač vyhrál 🤖' : 'Vyhrál jsi! 🎉') : name(p) + ' vyhrál! 🎉';
+      beep(523, .15, .15); setTimeout(() => beep(659, .15, .15), 140); setTimeout(() => beep(784, .3, .15), 280);
+      try { navigator.vibrate && navigator.vibrate(100); } catch (_) {}
+    } else if (moves.length === C * R) { over = true; $('msg').textContent = 'Remíza 🤝'; starter = starter === 'r' ? 'y' : 'r'; }
+    else turn = p === 'r' ? 'y' : 'r';
+    update();
+    if (!over && vsAI && turn === AI) setTimeout(aiMove, 300);
+  }, 180 + dist * 0.9);
+}
+
+// ---------- počítač (minimax) ----------
+function scoreWin(a){ let s = 0;
+  const me = a.filter(x => x === AI).length, op = a.filter(x => x && x !== AI).length, e = a.filter(x => !x).length;
+  if (me === 4) s += 1000; else if (me === 3 && e === 1) s += 6; else if (me === 2 && e === 2) s += 2;
+  if (op === 3 && e === 1) s -= 8; else if (op === 2 && e === 2) s -= 2;
+  return s; }
+function evalBoard(){
+  let s = 0;
+  for (let r = 0; r < R; r++) if (at(3, r) === AI) s += 3; else if (at(3, r)) s -= 3;
+  for (let c = 0; c < C; c++) for (let r = 0; r < R; r++) for (const [dc, dr] of [[1,0],[0,1],[1,1],[1,-1]]) {
+    const ec = c + dc * 3, er = r + dr * 3; if (ec < 0 || ec >= C || er < 0 || er >= R) continue;
+    s += scoreWin([0,1,2,3].map(k => at(c + dc * k, r + dr * k)));
+  }
+  return s;
+}
+const ORDER = [3, 2, 4, 1, 5, 0, 6];
+function minimax(depth, a, b, maxP, lastC){
+  if (lastC != null) { const r = g[lastC].length - 1, p = g[lastC][r]; if (winLine(lastC, r, p)) return p === AI ? 100000 + depth : -100000 - depth; }
+  if (depth === 0 || moves.length === C * R) return evalBoard();
+  let best = maxP ? -Infinity : Infinity;
+  for (const c of ORDER) {
+    if (g[c].length >= R) continue;
+    g[c].push(maxP ? AI : 'r'); moves.push(c);
+    const v = minimax(depth - 1, a, b, !maxP, c);
+    g[c].pop(); moves.pop();
+    if (maxP) { best = Math.max(best, v); a = Math.max(a, v); } else { best = Math.min(best, v); b = Math.min(b, v); }
+    if (a >= b) break;
+  }
+  return best;
+}
+function aiMove(){
+  if (over || turn !== AI || busy) return;
+  let best = -Infinity, bc = 3;
+  for (const c of ORDER) {
+    if (g[c].length >= R) continue;
+    g[c].push(AI); moves.push(c);
+    const v = minimax(5, -Infinity, Infinity, false, c) + Math.random();
+    g[c].pop(); moves.pop();
+    if (v > best) { best = v; bc = c; }
+  }
+  drop(bc);
+}
+
+// ---------- ovládání ----------
+$('board').addEventListener('click', e => {
+  const col = e.target.closest('.col'); if (!col) return;
+  if (vsAI && turn === AI) return;
+  drop(+col.dataset.c);
+});
+$('undoBtn').onclick = () => {
+  if (!moves.length || busy) return;
+  if (over) { const c = moves[moves.length - 1], r = g[c].length - 1, p = g[c][r]; if (winLine(c, r, p)) { score[p]--; starter = starter === 'r' ? 'y' : 'r'; } over = false; }
+  const pop = () => { const c = moves.pop(), r = g[c].length - 1, p = g[c].pop(); discEls[c + ',' + r].remove(); delete discEls[c + ',' + r]; turn = p; return p; };
+  if (vsAI) { while (moves.length) { if (pop() !== AI) break; } } else pop();
+  Object.values(discEls).forEach(d => d.classList.remove('win'));
+  update();
+  if (vsAI && turn === AI) setTimeout(aiMove, 350);
+};
+$('newBtn').onclick = () => { if (!busy) newGame(); };
+$('mode').onclick = e => {
+  const b = e.target.closest('button'); if (!b || busy) return;
+  vsAI = b.dataset.m === 'ai'; [...$('mode').children].forEach(x => x.classList.toggle('on', x === b));
+  score = { r: 0, y: 0 }; starter = 'r'; newGame();
+};
+$('homeBtn').onclick = () => { location.href = '../../index.html'; };
+addEventListener('resize', layout);
+buildHoles(); layout(); newGame();
+try { if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('../../sw.js', { updateViaCache: 'none' }).catch(() => {}); } catch (_) {}
+})();
+</script>
+</body>
+</html>

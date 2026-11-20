@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#07061a">
+<meta name="theme-color" content="#fff4e8">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Herna">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -14,53 +14,64 @@
 <title>Herna</title>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:#07061a;color:#e8f0ff;font-family:ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,"Courier New",monospace;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
-body{padding:calc(18px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));background:radial-gradient(ellipse at 50% -10%,#1d1450 0%,#07061a 60%) fixed}
-#stars{position:fixed;inset:0;z-index:-1;pointer-events:none}
-.wrap{max-width:520px;margin:0 auto}
-h1{margin:6px 0 2px;text-align:center;font-size:44px;letter-spacing:8px;color:#fff;text-shadow:0 0 8px #28e1ff,0 0 22px #28e1ff,0 0 40px #ff5ac8}
-.sub{text-align:center;color:#9aa6d8;font-size:13px;margin-bottom:16px}
-.status{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 auto 18px;padding:8px 12px;border-radius:12px;border:1px solid #2a2f6a;background:#0d0c2a;font-size:13px;max-width:360px;text-align:center}
-.status.ok{border-color:#2fbf6a;color:#8dffb4}
-.status.wait{color:#ffd76a}
-.dot{width:9px;height:9px;border-radius:50%;background:currentColor;flex:none;box-shadow:0 0 8px currentColor}
-.game{display:flex;gap:14px;align-items:center;padding:14px;margin-bottom:14px;border-radius:18px;background:linear-gradient(135deg,#141244,#0b0a26);border:2px solid var(--c);box-shadow:0 0 16px -4px var(--c),inset 0 0 22px -12px var(--c);text-decoration:none;color:inherit;transition:transform .12s}
+html,body{margin:0;min-height:100%;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+body{font-family:ui-rounded,"SF Pro Rounded","Nunito","Segoe UI Rounded",system-ui,-apple-system,sans-serif;color:#3a3350;
+  background:linear-gradient(180deg,#fff4e8 0%,#fdeaf3 45%,#e9f1ff 100%) fixed;
+  padding:calc(14px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom))}
+.wrap{max-width:540px;margin:0 auto}
+header{text-align:center;padding:10px 0 4px}
+.logo{display:inline-flex;align-items:center;gap:10px}
+.logo img{width:52px;height:52px;border-radius:14px;box-shadow:0 6px 14px -6px rgba(255,120,80,.6)}
+h1{margin:0;font-size:40px;font-weight:800;letter-spacing:.5px;background:linear-gradient(90deg,#ff7a59,#ff4f9a 50%,#7c6cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:#8a819f;font-size:15px;margin:4px 0 14px}
+.status{display:flex;align-items:center;gap:10px;margin:0 auto 18px;padding:10px 14px;border-radius:16px;background:#fff;font-size:14px;box-shadow:0 4px 16px -8px rgba(80,60,120,.35);color:#b07a10}
+.status.ok{color:#1f9d55}
+.dot{width:10px;height:10px;border-radius:50%;background:currentColor;flex:none}
+h2{font-size:17px;margin:20px 4px 10px;color:#5b5275;display:flex;align-items:center;gap:8px}
+h2 span{font-size:12px;font-weight:600;background:#fff;border-radius:20px;padding:3px 9px;color:#8a819f}
+.game{display:flex;gap:14px;align-items:center;padding:12px;margin-bottom:12px;border-radius:22px;background:#fff;text-decoration:none;color:inherit;
+  box-shadow:0 8px 22px -12px rgba(80,60,120,.45);border-left:6px solid var(--c);transition:transform .12s}
 .game:active{transform:scale(.97)}
-.game img{width:72px;height:72px;border-radius:16px;image-rendering:pixelated;flex:none;box-shadow:0 0 12px -2px var(--c)}
-.game .t{font-size:18px;font-weight:bold;color:#fff;margin-bottom:4px}
-.game .d{font-size:12.5px;color:#aab3e0;line-height:1.35}
-.game .r{font-size:12px;color:#ffd76a;margin-top:6px}
-.game .play{margin-left:auto;flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#07061a;font-size:20px;font-weight:bold}
-.soon{padding:16px;border-radius:18px;border:2px dashed #2f3470;color:#6f78ad;text-align:center;font-size:13px;line-height:1.5}
-.soon b{display:block;font-size:22px;margin-bottom:2px}
+.game img{width:70px;height:70px;border-radius:18px;flex:none;image-rendering:pixelated;background:#f4f1fb}
+.game .info{flex:1;min-width:0}
+.game .t{font-size:18px;font-weight:800;color:#2f2843;margin-bottom:3px}
+.game .d{font-size:13px;color:#7d7594;line-height:1.35}
+.game .r{font-size:12.5px;color:#5b5275;margin-top:6px;font-weight:600}
+.game .r:empty{display:none}
+.game .play{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#fff;font-size:18px;box-shadow:0 6px 12px -6px var(--c)}
+.soon{padding:16px;border-radius:22px;border:2px dashed #d9cfe8;color:#a49bb8;text-align:center;font-size:14px;line-height:1.5;margin-top:4px}
 button{font:inherit;cursor:pointer}
-.big{display:block;width:100%;margin:20px 0 0;padding:14px;border:0;border-radius:14px;background:linear-gradient(90deg,#ff5ac8,#7a5cff);color:#fff;font-size:16px;font-weight:bold;letter-spacing:1px;box-shadow:0 0 18px -4px #ff5ac8}
-.modal{position:fixed;inset:0;background:rgba(5,4,20,.9);display:flex;align-items:center;justify-content:center;padding:20px;z-index:5}
+.link{display:block;margin:20px auto 0;padding:11px 18px;border:0;border-radius:14px;background:#fff;color:#ff4f9a;font-size:15px;font-weight:800;box-shadow:0 6px 16px -10px rgba(80,60,120,.5)}
+.link.hidden{display:none}
+.save{margin-top:12px;text-align:center;font-size:13px;color:#8a819f;line-height:1.5}
+.modal{position:fixed;inset:0;background:rgba(60,45,90,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:5}
 .modal.hidden{display:none}
-.box{max-width:400px;width:100%;background:#100e34;border:2px solid #7a5cff;border-radius:18px;padding:20px;box-shadow:0 0 30px -6px #7a5cff}
-.box h2{margin:0 0 12px;font-size:20px;text-align:center}
-.box ol{margin:0;padding-left:22px;line-height:1.7;font-size:14.5px}
-.box .note{margin-top:12px;font-size:12.5px;color:#9aa6d8;line-height:1.45}
-.box button{margin-top:16px;width:100%;padding:12px;border-radius:12px;border:0;background:#28e1ff;color:#07061a;font-weight:bold;font-size:15px}
-.ic{display:inline-block;padding:0 6px;border-radius:6px;background:#2a2f6a}
+.box{max-width:400px;width:100%;background:#fff;border-radius:24px;padding:22px;box-shadow:0 20px 40px -16px rgba(60,40,100,.5)}
+.box h3{margin:0 0 12px;font-size:21px;text-align:center;color:#2f2843}
+.box ol{margin:0;padding-left:22px;line-height:1.8;font-size:15px}
+.box .note{margin-top:12px;font-size:13.5px;color:#7d7594;line-height:1.5}
+.box button{margin-top:16px;width:100%;padding:13px;border-radius:14px;border:0;background:#7c6cff;color:#fff;font-weight:800;font-size:16px}
+.ic{display:inline-block;padding:0 7px;border-radius:8px;background:#f1ecfb;font-weight:700}
 </style>
 </head>
 <body>
-<canvas id="stars"></canvas>
 <div class="wrap">
-  <h1>HERNA</h1>
-  <div class="sub">Naše hry · hrají se i bez internetu</div>
-  <div class="status wait" id="status"><span class="dot"></span><span id="statusT">Kontroluju offline režim…</span></div>
+  <header>
+    <div class="logo"><img src="icon-192.png" alt=""><h1>Herna</h1></div>
+    <div class="sub">Naše hry · fungují i bez internetu</div>
+  </header>
+  <div class="status" id="status"><span class="dot"></span><span id="statusT">Kontroluju offline režim…</span></div>
   <div id="list"></div>
-  <div class="soon"><b>🔒</b>Další hra se připravuje…<br>Brzy ji sem spolu přidáme!</div>
-  <button class="big" id="installBtn">📲 STÁHNOUT DO TELEFONU</button>
+  <div class="soon">🎁 Další hry spolu brzy přidáme!</div>
+  <button class="link" id="installBtn">📲 Jak dát Hernu na plochu telefonu</button>
+  <div class="save">💾 Ve hrách s delším postupem se tvůj postup ukládá sám.</div>
 </div>
 
 <div class="modal hidden" id="help">
   <div class="box">
-    <h2 id="helpTitle">Jak Hernu stáhnout</h2>
+    <h3 id="helpTitle">Jak Hernu stáhnout</h3>
     <div id="helpBody"></div>
-    <button id="helpClose">ROZUMÍM</button>
+    <button id="helpClose">Rozumím</button>
   </div>
 </div>
 
@@ -70,33 +81,36 @@ const $ = id => document.getElementById(id);
 const HRY = self.HERNA_HRY || [];
 
 // --- seznam her ---
-$('list').innerHTML = HRY.map(h => `
+const karta = h => `
   <a class="game" style="--c:${h.barva}" href="${h.soubory[1]}">
     <img src="${h.ikona}" alt="">
-    <div><div class="t">${h.nazev}</div><div class="d">${h.popis}</div><div class="r" data-r="${h.id}"></div></div>
+    <div class="info"><div class="t">${h.nazev}</div><div class="d">${h.popis}</div><div class="r" data-r="${h.id}"></div></div>
     <div class="play">▶</div>
-  </a>`).join('');
-function rekordy(){ for (const h of HRY) { const el = document.querySelector('[data-r="' + h.id + '"]'); try { el.textContent = h.rekord ? h.rekord() : ''; } catch (e) {} } }
-rekordy();
-addEventListener('pageshow', rekordy);
+  </a>`;
+$('list').innerHTML =
+  '<h2>👥 Pro 2 hráče <span>na jednom telefonu</span></h2>' + HRY.filter(h => h.hraci === 2).map(karta).join('') +
+  '<h2>🎮 Pro 1 hráče</h2>' + HRY.filter(h => h.hraci !== 2).map(karta).join('');
+function stavy(){ for (const h of HRY) { const el = document.querySelector('[data-r="' + h.id + '"]'); try { el.textContent = h.stav ? h.stav() : ''; } catch (e) {} } }
+stavy();
+addEventListener('pageshow', stavy);
+
+// --- ať telefon uložený postup nemaže ---
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
 
 // --- offline stav ---
 const nainstalovano = navigator.standalone === true || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
-function status(ok, text){ const s = $('status'); s.className = 'status ' + (ok ? 'ok' : 'wait'); $('statusT').textContent = text; }
+function status(ok, text){ $('status').className = 'status' + (ok ? ' ok' : ''); $('statusT').textContent = text; }
 async function zkontroluj(){
   try {
-    const keys = await caches.keys();
-    const k = keys.find(x => x === 'herna-v' + self.HERNA_VERZE);
-    if (!k) return false;
-    const c = await caches.open(k);
+    const c = await caches.open('herna-v' + self.HERNA_VERZE);
     for (const h of HRY) if (!(await c.match(h.soubory[1]))) return false;
     return true;
   } catch (e) { return false; }
 }
 async function obnovStav(){
   if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) { status(false, 'Offline režim jde jen na webové adrese'); return; }
-  if (await zkontroluj()) status(true, nainstalovano ? '✓ Všechny hry jsou v telefonu – hraj i bez internetu' : '✓ Hry jsou uložené – ještě přidej Hernu na plochu');
-  else status(false, navigator.onLine ? 'Ukládám hry do telefonu…' : 'Připoj se jednou k internetu, ať se hry uloží');
+  if (await zkontroluj()) status(true, nainstalovano ? 'Všechny hry fungují offline – i ve vlaku 🚆' : 'Všechny hry fungují offline – i ve vlaku 🚆');
+  else status(false, navigator.onLine ? 'Chystám hry na hraní bez internetu…' : 'Připoj se jednou k internetu, pak pojedou hry i offline');
 }
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
   navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => { try { r.update(); } catch (e) {} }).catch(() => {});
@@ -107,35 +121,25 @@ obnovStav();
 let tik = 0; const iv = setInterval(() => { obnovStav(); if (++tik > 15) clearInterval(iv); }, 1500);
 
 // --- stažení na plochu ---
-let prompt = null;
-addEventListener('beforeinstallprompt', e => { e.preventDefault(); prompt = e; });
+let vyzva = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); vyzva = e; });
 const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-if (nainstalovano) { $('installBtn').textContent = '✓ HERNA JE NA PLOŠE'; $('installBtn').style.opacity = .6; }
-$('installBtn').onclick = async () => {
-  if (prompt) { prompt.prompt(); prompt = null; return; }
+if (nainstalovano) $('installBtn').classList.add('hidden');
+$('installBtn').onclick = () => {
+  if (vyzva) { vyzva.prompt(); vyzva = null; return; }
   if (nainstalovano) {
     $('helpTitle').textContent = 'Herna je stažená 🎉';
-    $('helpBody').innerHTML = '<div class="note" style="font-size:14px;color:#e8f0ff">Hry máš v telefonu a jedou i bez internetu. Když přidáme novou hru, stačí Hernu jednou otevřít s internetem a stáhne se sama.</div>';
+    $('helpBody').innerHTML = '<div class="note" style="font-size:15px;color:#3a3350">Hry máš v telefonu a jedou i bez internetu. Když přidáme novou hru, stačí Hernu jednou otevřít s internetem a stáhne se sama.</div>';
   } else if (ios) {
     $('helpTitle').textContent = 'Stažení na iPhone';
-    $('helpBody').innerHTML = '<ol><li>Otevři tuhle stránku v <b>Safari</b>.</li><li>Dole klepni na <span class="ic">Sdílet ⬆︎</span>.</li><li>Sjeď níž a vyber <span class="ic">Přidat na plochu ➕</span>.</li><li>Klepni na <b>Přidat</b>.</li></ol><div class="note">Na ploše se objeví ikona <b>Herna</b>. Spouštěj hry přes ni – pak jedou i v letadle nebo bez signálu.</div>';
+    $('helpBody').innerHTML = '<ol><li>Otevři tuhle stránku v <b>Safari</b>.</li><li>Dole klepni na <span class="ic">Sdílet ⬆︎</span>.</li><li>Sjeď níž a vyber <span class="ic">Přidat na plochu ➕</span>.</li><li>Klepni na <b>Přidat</b>.</li></ol><div class="note">Na ploše se objeví ikona <b>Herna</b>. Spouštěj hry přes ni, pak jedou i bez internetu a postup se ti nesmaže.</div>';
   } else {
     $('helpTitle').textContent = 'Stažení do telefonu';
-    $('helpBody').innerHTML = '<ol><li>Otevři stránku v <b>Chrome</b>.</li><li>Klepni na menu <span class="ic">⋮</span> vpravo nahoře.</li><li>Vyber <span class="ic">Přidat na plochu</span> nebo <span class="ic">Nainstalovat aplikaci</span>.</li></ol><div class="note">Pak se Herna spouští z ikony na ploše a hry jedou i bez internetu.</div>';
+    $('helpBody').innerHTML = '<ol><li>Otevři stránku v <b>Chrome</b>.</li><li>Klepni na <span class="ic">⋮</span> vpravo nahoře.</li><li>Vyber <span class="ic">Přidat na plochu</span> nebo <span class="ic">Nainstalovat aplikaci</span>.</li></ol><div class="note">Pak se Herna spouští z ikony na ploše a hry jedou i bez internetu.</div>';
   }
   $('help').classList.remove('hidden');
 };
 $('helpClose').onclick = () => $('help').classList.add('hidden');
-
-// --- hvězdy v pozadí ---
-const cv = $('stars'), cx = cv.getContext('2d');
-let S = [];
-function rs(){ const d = Math.min(2, devicePixelRatio || 1); cv.width = innerWidth * d; cv.height = innerHeight * d; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; cx.setTransform(d,0,0,d,0,0);
-  S = Array.from({length: 70}, () => ({x: Math.random()*innerWidth, y: Math.random()*innerHeight, v: .2 + Math.random()*.8, s: Math.random() < .2 ? 2 : 1})); }
-rs(); addEventListener('resize', rs);
-(function f(){ cx.clearRect(0,0,innerWidth,innerHeight);
-  for (const s of S) { s.y += s.v; if (s.y > innerHeight) { s.y = 0; s.x = Math.random()*innerWidth; } cx.fillStyle = s.s > 1 ? '#9fe8ff' : '#5a6299'; cx.fillRect(s.x|0, s.y|0, s.s, s.s); }
-  requestAnimationFrame(f); })();
 </script>
 </body>
 </html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#eaf5ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Herna">
+<link rel="manifest" href="../../manifest.webmanifest">
+<link rel="icon" href="ikona.svg">
+<title>Vzdušný hokej</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#eaf5ff;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;
+  font-family:ui-rounded,"SF Pro Rounded","Nunito",system-ui,-apple-system,sans-serif;color:#3a3350}
+canvas{position:fixed;left:0;top:0;display:block}
+.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:rgba(234,245,255,.82);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);z-index:3;text-align:center}
+.hidden{display:none!important}
+h1{margin:0;font-size:34px;font-weight:800;color:#2f2843}
+p{margin:0;color:#6d6688;font-size:15px;line-height:1.45;max-width:320px}
+button{font:inherit;cursor:pointer;border:0}
+.btn{width:260px;padding:15px;border-radius:18px;font-size:18px;font-weight:800;color:#fff;background:#ff6b6b;box-shadow:0 8px 18px -10px #ff6b6b}
+.btn.b{background:#4d96ff;box-shadow:0 8px 18px -10px #4d96ff}
+.btn.g{background:#fff;color:#5b5275;box-shadow:0 6px 16px -10px rgba(60,40,100,.5)}
+.diff{display:flex;gap:6px;background:#fff;padding:5px;border-radius:14px}
+.diff button{padding:8px 12px;border-radius:10px;background:transparent;color:#7d7594;font-weight:700;font-size:14px}
+.diff button.on{background:#4d96ff;color:#fff}
+#homeBtn,#pauseBtn{position:fixed;z-index:2;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.9);color:#5b5275;font-size:18px;font-weight:800;box-shadow:0 4px 12px -6px rgba(60,40,100,.5);left:10px;top:50%;margin-top:-21px}
+#pauseBtn{left:auto;right:10px}
+.win{font-size:30px;font-weight:800}
+.flip{transform:rotate(180deg)}
+</style>
+</head>
+<body>
+<div id="sa" style="position:fixed;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)"></div>
+<canvas id="c"></canvas>
+<button id="homeBtn" aria-label="Herna">⌂</button>
+<button id="pauseBtn" aria-label="Pauza">II</button>
+
+<div class="overlay" id="menu">
+  <h1>🏒 Vzdušný hokej</h1>
+  <p>Každý hráč drží svou polovinu telefonu a prstem posouvá svou pálku. Kdo dá první <b>7 gólů</b>, vyhrává.</p>
+  <button class="btn" id="p2Btn">👥 Dva hráči</button>
+  <button class="btn b" id="aiBtn">🤖 Proti počítači</button>
+  <div class="diff" id="diff"><button data-d="0">Lehký</button><button data-d="1" class="on">Střední</button><button data-d="2">Těžký</button></div>
+  <button class="btn g" id="backBtn">⌂ Zpět do Herny</button>
+</div>
+
+<div class="overlay hidden" id="pause">
+  <h1>Pauza</h1>
+  <button class="btn b" id="resumeBtn">▶ Pokračovat</button>
+  <button class="btn g" id="quitBtn">Konec hry</button>
+</div>
+
+<div class="overlay hidden" id="end">
+  <div class="win flip" id="endTop"></div>
+  <div style="height:30px"></div>
+  <div class="win" id="endBot"></div>
+  <p id="endScore"></p>
+  <button class="btn" id="againBtn">↻ Hrát znovu</button>
+  <button class="btn g" id="menuBtn">Menu</button>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const cv = $('c'), cx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+const GOALS_TO_WIN = 7;
+let mode = 'menu', vsAI = false, diff = 1, paused = false;
+let score = [0, 0];            // [dole (červený), nahoře (modrý)]
+let field, puck, mallets, freeze = 0, goalFlash = 0, goalSide = -1;
+
+function resize(){
+  DPR = Math.min(2, devicePixelRatio || 1);
+  W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const cs = getComputedStyle($('sa')), m = 10;
+  const st = m + (parseFloat(cs.paddingTop) || 0), sb = m + (parseFloat(cs.paddingBottom) || 0);
+  field = { x: m, y: st, w: W - 2 * m, h: H - st - sb };
+  field.r = Math.min(field.w, field.h) * 0.06;
+  field.goal = field.w * 0.4;
+  const u = Math.min(field.w, field.h * 0.6);
+  if (mallets) { for (const k of mallets) { k.r = u * 0.085; } puck.r = u * 0.055; clampAll(); }
+}
+
+function newRound(toward){
+  // puk na střed, kdo dostal gól, tomu jde puk
+  puck.x = field.x + field.w / 2;
+  puck.y = field.y + field.h / 2 + (toward === 0 ? field.h * 0.12 : toward === 1 ? -field.h * 0.12 : 0);
+  puck.vx = 0; puck.vy = 0;
+}
+function newGame(){
+  const u = Math.min(field.w, field.h * 0.6);
+  puck = { x: 0, y: 0, vx: 0, vy: 0, r: u * 0.055 };
+  mallets = [
+    { x: field.x + field.w / 2, y: field.y + field.h * 0.85, vx: 0, vy: 0, r: u * 0.085, tx: null, ty: null, pid: null, col: '#ff6b6b', dark: '#e04848' },
+    { x: field.x + field.w / 2, y: field.y + field.h * 0.15, vx: 0, vy: 0, r: u * 0.085, tx: null, ty: null, pid: null, col: '#4d96ff', dark: '#2f74db' }
+  ];
+  score = [0, 0];
+  newRound(-1);
+  freeze = 0.6; goalFlash = 0;
+}
+function clampMallet(m, i){
+  const half = field.y + field.h / 2;
+  const minY = i === 0 ? half + m.r : field.y + m.r;
+  const maxY = i === 0 ? field.y + field.h - m.r : half - m.r;
+  m.x = Math.max(field.x + m.r, Math.min(field.x + field.w - m.r, m.x));
+  m.y = Math.max(minY, Math.min(maxY, m.y));
+}
+function clampAll(){ mallets.forEach(clampMallet); }
+
+// ---------- ovládání (víc prstů najednou) ----------
+function side(y){ return y > field.y + field.h / 2 ? 0 : 1; }
+cv.addEventListener('pointerdown', e => {
+  if (mode !== 'play' || paused) return;
+  const i = side(e.clientY);
+  if (vsAI && i === 1) return;
+  const m = mallets[i]; m.pid = e.pointerId; m.tx = e.clientX; m.ty = e.clientY;
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+  audioInit();
+});
+cv.addEventListener('pointermove', e => {
+  for (const m of mallets) if (m.pid === e.pointerId) { m.tx = e.clientX; m.ty = e.clientY; }
+});
+const up = e => { for (const m of mallets) if (m.pid === e.pointerId) { m.pid = null; } };
+cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+
+// ---------- zvuk ----------
+let AC = null;
+function audioInit(){ if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {} } if (AC && AC.state === 'suspended') AC.resume(); }
+function beep(f, d, v = 0.15, type = 'sine'){
+  if (!AC) return; const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + d);
+  o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d);
+}
+let lastHit = 0;
+function hitSound(sp){ const now = performance.now(); if (now - lastHit < 60) return; lastHit = now; beep(520 + Math.min(500, sp * 0.4), 0.06, Math.min(0.2, 0.05 + sp / 5000), 'triangle'); }
+
+// ---------- počítač ----------
+const AI = [ { sp: 520, react: 0.55 }, { sp: 850, react: 0.8 }, { sp: 1250, react: 1 } ];
+function aiThink(dt){
+  const m = mallets[1], a = AI[diff];
+  const half = field.y + field.h / 2;
+  let tx, ty;
+  const home = { x: field.x + field.w / 2, y: field.y + field.h * 0.1 };
+  if (puck.y < half + puck.r && (puck.vy < 60 || puck.y < m.y + m.r)) {
+    // útok: dostat se nad puk a strčit ho dolů
+    if (puck.y < m.y) { tx = puck.x + (puck.x > m.x ? m.r : -m.r) * 1.2; ty = puck.y - m.r * 1.6; }
+    else { tx = puck.x; ty = puck.y - puck.r * 0.3; }
+  } else {
+    // obrana: stoupnout si mezi puk a branku
+    tx = home.x + (puck.x - home.x) * 0.45 * a.react; ty = home.y + field.h * 0.05;
+  }
+  const dx = tx - m.x, dy = ty - m.y, d = Math.hypot(dx, dy) || 1;
+  const step = Math.min(d, a.sp * dt);
+  m.tx = m.x + dx / d * step; m.ty = m.y + dy / d * step;
+}
+
+// ---------- fyzika ----------
+function moveMallets(dt){
+  mallets.forEach((m, i) => {
+    const ox = m.x, oy = m.y;
+    if (m.tx != null) { m.x = m.tx; m.y = m.ty; }
+    clampMallet(m, i);
+    const nvx = (m.x - ox) / dt, nvy = (m.y - oy) / dt;
+    m.vx = m.vx * 0.4 + nvx * 0.6; m.vy = m.vy * 0.4 + nvy * 0.6;
+  });
+}
+function collide(m){
+  const dx = puck.x - m.x, dy = puck.y - m.y, d = Math.hypot(dx, dy), min = puck.r + m.r;
+  if (d >= min || d === 0) return;
+  const nx = dx / d, ny = dy / d;
+  puck.x = m.x + nx * min; puck.y = m.y + ny * min;
+  const rvx = puck.vx - m.vx, rvy = puck.vy - m.vy, dot = rvx * nx + rvy * ny;
+  if (dot < 0) { puck.vx -= 1.9 * dot * nx; puck.vy -= 1.9 * dot * ny; hitSound(Math.abs(dot)); }
+}
+function stepPuck(dt){
+  const maxV = Math.max(field.w, field.h) * 3.2;
+  puck.x += puck.vx * dt; puck.y += puck.vy * dt;
+  const f = Math.pow(0.55, dt); puck.vx *= f; puck.vy *= f;
+  const sp = Math.hypot(puck.vx, puck.vy); if (sp > maxV) { puck.vx *= maxV / sp; puck.vy *= maxV / sp; }
+  for (const m of mallets) collide(m);
+  const L = field.x + puck.r, R = field.x + field.w - puck.r;
+  if (puck.x < L) { puck.x = L; if (puck.vx < 0) { puck.vx = -puck.vx * 0.9; hitSound(Math.abs(puck.vx)); } }
+  if (puck.x > R) { puck.x = R; if (puck.vx > 0) { puck.vx = -puck.vx * 0.9; hitSound(Math.abs(puck.vx)); } }
+  const gx1 = field.x + (field.w - field.goal) / 2, gx2 = gx1 + field.goal;
+  const inGoal = puck.x > gx1 + puck.r * 0.3 && puck.x < gx2 - puck.r * 0.3;
+  const T = field.y + puck.r, B = field.y + field.h - puck.r;
+  if (puck.y < T) {
+    if (inGoal) { if (puck.y < field.y - puck.r) return goal(0); }
+    else { puck.y = T; if (puck.vy < 0) { puck.vy = -puck.vy * 0.9; hitSound(Math.abs(puck.vy)); } }
+  }
+  if (puck.y > B) {
+    if (inGoal) { if (puck.y > field.y + field.h + puck.r) return goal(1); }
+    else { puck.y = B; if (puck.vy > 0) { puck.vy = -puck.vy * 0.9; hitSound(Math.abs(puck.vy)); } }
+  }
+}
+function goal(who){
+  score[who]++;
+  goalSide = who; goalFlash = 1;
+  beep(660, 0.12, 0.2); setTimeout(() => beep(880, 0.2, 0.2), 110);
+  try { navigator.vibrate && navigator.vibrate(120); } catch (_) {}
+  if (score[who] >= GOALS_TO_WIN) { endGame(who); return; }
+  newRound(who === 0 ? 1 : 0);
+  freeze = 0.9;
+}
+function endGame(who){
+  mode = 'end';
+  const w = 'Vyhrál jsi! 🎉', l = 'Prohra 😅';
+  if (vsAI) { $('endBot').textContent = who === 0 ? w : 'Počítač vyhrál 🤖'; $('endTop').textContent = ''; }
+  else { $('endBot').textContent = who === 0 ? w : l; $('endTop').textContent = who === 1 ? w : l; }
+  $('endBot').style.color = '#ff6b6b'; $('endTop').style.color = '#4d96ff';
+  $('endScore').textContent = 'Skóre ' + score[0] + ' : ' + score[1];
+  $('end').classList.remove('hidden');
+  beep(523, 0.15, 0.2); setTimeout(() => beep(659, 0.15, 0.2), 150); setTimeout(() => beep(784, 0.3, 0.2), 300);
+}
+
+// ---------- kreslení ----------
+function roundRect(x, y, w, h, r){ cx.beginPath(); cx.moveTo(x + r, y); cx.arcTo(x + w, y, x + w, y + h, r); cx.arcTo(x + w, y + h, x, y + h, r); cx.arcTo(x, y + h, x, y, r); cx.arcTo(x, y, x + w, y, r); cx.closePath(); }
+function draw(){
+  cx.fillStyle = '#eaf5ff'; cx.fillRect(0, 0, W, H);
+  const f = field;
+  roundRect(f.x, f.y, f.w, f.h, f.r); cx.fillStyle = '#ffffff'; cx.fill();
+  cx.lineWidth = 4; cx.strokeStyle = '#bcdcff'; cx.stroke();
+  // čáry
+  const cy = f.y + f.h / 2, cxm = f.x + f.w / 2;
+  cx.strokeStyle = '#ffc2d1'; cx.lineWidth = 3;
+  cx.beginPath(); cx.moveTo(f.x, cy); cx.lineTo(f.x + f.w, cy); cx.stroke();
+  cx.beginPath(); cx.arc(cxm, cy, f.w * 0.16, 0, Math.PI * 2); cx.stroke();
+  cx.strokeStyle = '#d6e9ff';
+  cx.beginPath(); cx.arc(cxm, f.y, f.goal * 0.6, 0, Math.PI); cx.stroke();
+  cx.beginPath(); cx.arc(cxm, f.y + f.h, f.goal * 0.6, Math.PI, 0); cx.stroke();
+  // skóre (horní hráč ho vidí otočené)
+  cx.textAlign = 'center'; cx.textBaseline = 'middle';
+  cx.font = '800 ' + Math.round(f.w * 0.22) + 'px ui-rounded,system-ui,sans-serif';
+  cx.fillStyle = 'rgba(255,107,107,.18)'; cx.fillText(score[0], cxm, cy + f.h * 0.18);
+  cx.save(); cx.translate(cxm, cy - f.h * 0.18); cx.rotate(Math.PI); cx.fillStyle = 'rgba(77,150,255,.18)'; cx.fillText(score[1], 0, 0); cx.restore();
+  // branky
+  const gx = f.x + (f.w - f.goal) / 2;
+  cx.fillStyle = '#4d96ff'; roundRect(gx, f.y - 4, f.goal, 9, 4); cx.fill();
+  cx.fillStyle = '#ff6b6b'; roundRect(gx, f.y + f.h - 5, f.goal, 9, 4); cx.fill();
+  // záblesk gólu
+  if (goalFlash > 0) {
+    cx.fillStyle = (goalSide === 0 ? 'rgba(255,107,107,' : 'rgba(77,150,255,') + (goalFlash * 0.25) + ')';
+    roundRect(f.x, f.y, f.w, f.h, f.r); cx.fill();
+    cx.font = '800 ' + Math.round(f.w * 0.13) + 'px ui-rounded,system-ui,sans-serif';
+    cx.fillStyle = 'rgba(58,51,80,' + Math.min(1, goalFlash * 1.5) + ')';
+    cx.fillText('GÓÓÓL!', cxm, cy + (goalSide === 0 ? f.h * 0.3 : 0) - (goalSide === 1 ? f.h * 0.3 : 0));
+  }
+  if (!puck) return;
+  // puk
+  cx.fillStyle = 'rgba(60,40,100,.12)'; cx.beginPath(); cx.arc(puck.x + 3, puck.y + 4, puck.r, 0, 7); cx.fill();
+  cx.fillStyle = '#3a3350'; cx.beginPath(); cx.arc(puck.x, puck.y, puck.r, 0, 7); cx.fill();
+  cx.strokeStyle = '#5e5578'; cx.lineWidth = 2; cx.beginPath(); cx.arc(puck.x, puck.y, puck.r * 0.6, 0, 7); cx.stroke();
+  // pálky
+  for (const m of mallets) {
+    cx.fillStyle = 'rgba(60,40,100,.14)'; cx.beginPath(); cx.arc(m.x + 3, m.y + 5, m.r, 0, 7); cx.fill();
+    cx.fillStyle = m.col; cx.beginPath(); cx.arc(m.x, m.y, m.r, 0, 7); cx.fill();
+    cx.fillStyle = m.dark; cx.beginPath(); cx.arc(m.x, m.y, m.r * 0.5, 0, 7); cx.fill();
+    cx.fillStyle = 'rgba(255,255,255,.45)'; cx.beginPath(); cx.arc(m.x - m.r * 0.3, m.y - m.r * 0.35, m.r * 0.22, 0, 7); cx.fill();
+  }
+}
+
+// ---------- smyčka ----------
+let last = performance.now();
+function loop(now){
+  let dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (mode === 'play' && !paused) {
+    if (goalFlash > 0) goalFlash = Math.max(0, goalFlash - dt * 1.6);
+    if (vsAI) aiThink(dt);
+    const N = 6, h = dt / N;
+    for (let i = 0; i < N; i++) {
+      // pálky se posunou postupně, aby neprolétly pukem
+      const ts = mallets.map(m => [m.tx, m.ty]);
+      mallets.forEach(m => { if (m.tx != null) { m.tx = m.x + (m.tx - m.x) / (N - i); m.ty = m.y + (m.ty - m.y) / (N - i); } });
+      moveMallets(h);
+      mallets.forEach((m, k) => { if (ts[k][0] != null) { m.tx = ts[k][0]; m.ty = ts[k][1]; } });
+      if (freeze > 0) { freeze -= h; for (const m of mallets) collide(m); }
+      else stepPuck(h);
+      if (mode !== 'play') break;
+    }
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ---------- tlačítka ----------
+function start(ai){
+  vsAI = ai; mode = 'play'; paused = false;
+  newGame(); audioInit();
+  $('menu').classList.add('hidden'); $('end').classList.add('hidden'); $('pause').classList.add('hidden');
+}
+$('p2Btn').onclick = () => start(false);
+$('aiBtn').onclick = () => start(true);
+$('diff').onclick = e => { const b = e.target.closest('button'); if (!b) return; diff = +b.dataset.d; [...$('diff').children].forEach(x => x.classList.toggle('on', x === b)); };
+$('againBtn').onclick = () => start(vsAI);
+const toMenu = () => { mode = 'menu'; paused = false; $('end').classList.add('hidden'); $('pause').classList.add('hidden'); $('menu').classList.remove('hidden'); };
+$('menuBtn').onclick = toMenu; $('quitBtn').onclick = toMenu;
+const home = () => { location.href = '../../index.html'; };
+$('backBtn').onclick = home; $('homeBtn').onclick = home;
+$('pauseBtn').onclick = () => { if (mode !== 'play') return; paused = true; $('pause').classList.remove('hidden'); };
+$('resumeBtn').onclick = () => { paused = false; $('pause').classList.add('hidden'); last = performance.now(); };
+document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'play' && !paused) $('pauseBtn').onclick(); });
+
+addEventListener('resize', resize);
+resize(); newGame(); mode = 'menu';
+requestAnimationFrame(loop);
+
+try { if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('../../sw.js', { updateViaCache: 'none' }).catch(() => {}); } catch (_) {}
+})();
+</script>
+</body>
+</html>
