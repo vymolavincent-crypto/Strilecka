@@ -1,7 +1,7 @@
 // Offline režim: při prvním otevření se do telefonu uloží menu i VŠECHNY hry.
 // Hry se pak spouští vždy hned z telefonu (i ve vlaku, bez signálu nebo na vlakové Wi-Fi),
 // a když je internet, nová verze se potichu stáhne na pozadí.
-// VERZE 9 – při každé nové verzi zvyš toto číslo i HERNA_VERZE v hry.js
+// VERZE 10 – při každé nové verzi zvyš toto číslo i HERNA_VERZE v hry.js
 importScripts('hry.js');
 const CACHE = 'herna-v' + self.HERNA_VERZE;
 const ZAKLAD = ['./', './index.html', './hry.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
@@ -21,11 +21,17 @@ function sTimeoutem(req, ms){
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE);
-    await Promise.all(FILES.map(async f => {
-      const res = await fetch(new Request(f, { cache: 'reload' }));
-      if (!(await jeNase(res))) throw new Error('špatný soubor ' + f);
-      await c.put(f, res);
-    }));
+    // hlavní soubory musí projít, hry se zkusí každá zvlášť (jedna chyba nezastaví celou aktualizaci)
+    const zkus = async (f, nutny) => {
+      for (let pokus = 0; pokus < 3; pokus++) {
+        try { const res = await fetch(new Request(f, { cache: 'reload' })); if (await jeNase(res)) { await c.put(f, res); return; } } catch (e) {}
+      }
+      if (nutny) throw new Error('nepodařilo se stáhnout ' + f);
+    };
+    await Promise.all(ZAKLAD.map(f => zkus(f, true)));
+    await Promise.all(FILES.filter(f => !ZAKLAD.includes(f)).map(f => zkus(f, false)));
+    // co se nestáhlo, vezmi ze staré verze
+    for (const f of FILES) if (!(await c.match(f))) { const old = await caches.match(f); if (old) await c.put(f, old); }
     await self.skipWaiting();
   })());
 });
