@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<!-- herna-ok -->
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vesmírná střílečka">
+<link rel="manifest" href="../../manifest.webmanifest">
+<link rel="icon" href="ikona.png">
+<title>Úklid v parku</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b0d26;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;
+  font-family:ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,"Courier New",monospace;color:#dfe6ff}
+canvas,img{image-rendering:pixelated;image-rendering:crisp-edges}
+button{font:inherit;cursor:pointer;border:0}
+.hidden{display:none!important}
+#top{position:fixed;left:0;right:0;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;background:#0b0d26;box-shadow:0 4px 0 0 #2c3778}
+#homeBtn{width:36px;height:36px;background:#151a44;color:#dfe6ff;font-size:16px;font-weight:900;box-shadow:0 0 0 3px #2c3778;flex:none;margin:3px}
+#money{flex:1;min-width:0}
+#moneyT{font-size:20px;font-weight:900;color:#ffd166;text-shadow:2px 2px 0 #05061a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#rateT{font-size:11px;color:#8fa0d8}
+#bin{width:118px;flex:none}
+#binT{font-size:10.5px;color:#a7b2dc;margin-bottom:3px;text-align:right;white-space:nowrap}
+#binBar{height:10px;background:#151a44;box-shadow:0 0 0 2px #2c3778}
+#binFill{height:100%;width:0;background:#7dffa8;transition:width .15s steps(4)}
+#binFill.full{background:#ff6b6b;animation:bl .5s steps(2) infinite}
+@keyframes bl{50%{background:#ffd166}}
+#park{position:fixed;left:0;right:0;touch-action:none}
+#shop{position:fixed;left:0;right:0;bottom:0;background:#0b0d26;box-shadow:0 -4px 0 0 #2c3778;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)}
+#tabs{display:flex;gap:6px;padding:10px 10px 8px}
+#tabs button{flex:1;padding:8px 4px;background:#151a44;color:#8fa0d8;font-weight:900;font-size:12px;box-shadow:0 0 0 3px #2c3778;text-transform:uppercase;margin:3px}
+#tabs button.on{background:#ffd166;color:#0b0d26;box-shadow:0 0 0 3px #ffd166}
+#list{flex:1;overflow-y:auto;padding:4px 12px 12px;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.item{display:flex;gap:10px;align-items:center;padding:8px;margin:6px 3px 12px;background:#151a44;box-shadow:0 -3px 0 0 #2c3778,0 3px 0 0 #2c3778,-3px 0 0 0 #2c3778,3px 0 0 0 #2c3778}
+.item.locked{opacity:.45}
+.item .ic{width:44px;height:44px;flex:none;background:#0b0d26;box-shadow:0 0 0 3px #0b0d26;display:grid;place-items:center}
+.item .ic img{width:40px;height:40px}
+.item .inf{flex:1;min-width:0}
+.item .nm{font-size:13px;font-weight:900;color:#fff;text-transform:uppercase}
+.item .nm span{color:#ffd166}
+.item .ds{font-size:11px;color:#a7b2dc;line-height:1.35;margin-top:2px}
+.item .bt{display:flex;flex-direction:column;gap:6px;flex:none}
+.buy{min-width:92px;padding:7px 6px;font-size:11.5px;font-weight:900;color:#0b0d26;background:#7dffa8;box-shadow:inset 0 -3px 0 0 rgba(0,0,0,.25);line-height:1.2}
+.buy.up{background:#5ee7ff}
+.buy:disabled{background:#2c3778;color:#6f7bb5;box-shadow:none}
+.buy:not(:disabled):active{transform:translate(1px,1px)}
+.buy small{display:block;font-size:10px;font-weight:700}
+.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:rgba(8,9,30,.88);z-index:5;text-align:center}
+h1{margin:0;font-size:26px;letter-spacing:2px;color:#7dffa8;text-shadow:3px 3px 0 #05061a;text-transform:uppercase}
+p{margin:0;color:#a7b2dc;font-size:13px;line-height:1.6;max-width:320px}
+.btn{--k:#7dffa8;width:240px;padding:13px;font-size:15px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#0b0d26;background:var(--k);margin:4px;
+  box-shadow:0 -4px 0 0 var(--k),0 4px 0 0 var(--k),-4px 0 0 0 var(--k),4px 0 0 0 var(--k),inset 0 -5px 0 0 rgba(0,0,0,.28)}
+.btn.g{--k:#2c3778;color:#dfe6ff}
+</style>
+</head>
+<body>
+<div id="top">
+  <button id="homeBtn" aria-label="Menu">⌂</button>
+  <div id="money"><div id="moneyT">0 Kč</div><div id="rateT"></div></div>
+  <div id="bin"><div id="binT">Kontejner 0/10</div><div id="binBar"><div id="binFill"></div></div></div>
+</div>
+<canvas id="park"></canvas>
+<div id="shop">
+  <div id="tabs"><button data-t="lide" class="on">👥 Lidé</button><button data-t="uklid">🧹 Úklid</button><button data-t="auta">🚛 Auta</button></div>
+  <div id="list"></div>
+</div>
+
+<div class="overlay hidden" id="intro">
+  <h1>Úklid v parku</h1>
+  <p>Lidé v parku hází odpadky. <b>Klepej na ně nebo přes ně táhni prstem</b> a sbírej je. Za každý odpadek dostaneš peníze a on letí do kontejneru.</p>
+  <p>Když je kontejner plný, musíš počkat na popelářské auto. Za peníze kupuj další lidi, uklízeče a auta.</p>
+  <button class="btn" id="introBtn">▶ Jdeme uklízet</button>
+</div>
+<div class="overlay hidden" id="away">
+  <h1>Vítej zpátky!</h1>
+  <p id="awayT"></p>
+  <button class="btn" id="awayBtn">Super!</button>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const cv = $('park'), cx = cv.getContext('2d');
+const off = document.createElement('canvas'); let o = off.getContext('2d');
+const LW = 136;
+let W, H, DPR, LH, S, parkH, topH, shopH, bgImg, pond, path;
+
+// ============ ČÍSLA ============
+const fmt = n => {
+  n = Math.floor(n);
+  if (n < 1e6) return n.toLocaleString('cs-CZ').replace(/ /g, ' ');
+  const u = [['bil.', 1e12], ['mld.', 1e9], ['mil.', 1e6]];
+  for (const [s, v] of u) if (n >= v) return (n / v).toFixed(n / v < 10 ? 2 : 1).replace('.', ',') + ' ' + s;
+};
+
+// ============ ODPADKY (pixelové) ============
+const PAL = { k:'#1a1a2a', w:'#ffffff', W:'#c9cfe6', g:'#8a90a8', G:'#5a5f78', r:'#ff5c5c', R:'#b8323a', y:'#ffd84a', Y:'#c99a1a', b:'#8a5a2a', B:'#5a3818', n:'#c58a4a',
+  c:'#5ee7ff', C:'#2aa9c9', e:'#3fbf5a', E:'#2a7a3a', l:'#9fe08a', p:'#ff9ad8', o:'#ff9a3d', s:'#e8e2d0', u:'#4d96ff', v:'#c58bff', h:'#7a4a22' };
+const TRASH = {
+  papir:   { rows: ["..ww.", ".wWww", "wwWWw", ".wwW.", "..w.."] },
+  plechovka:{ rows: [".gg.", "rrrr", "rwwr", "rrrr", "rRRr", ".gg."] },
+  kelimek: { rows: ["...k", ".wkw", "wwww", "rrrr", "wwww", ".ww."] },
+  noviny:  { rows: ["WWWWWW", "WgggWW", "WWWWWW", "WgWggW", "WWWWWW"] },
+  banan:   { rows: ["Y....", "yy...", ".yy..", ".yyy.", "..yyY"] },
+  jablko:  { rows: [".b.", "lsl", ".s.", "lsl"] },
+  pizza:   { rows: ["nnnnnn", "nyrryn", "nryyrn", "nnnnnn"] },
+  plenka:  { rows: ["uwwwwu", "wwwwww", ".wyyw.", "..ww.."] },
+  lahev:   { rows: [".e.", ".e.", "eEe", "eEl", "eEe", "eee"] },
+  bobek:   { rows: ["..h..", ".hBh.", "hBhBh", "BhhhB"] },
+  sroub:   { rows: ["ggg", ".G.", ".g.", ".G."] },
+  krystal: { rows: [".c.", "cCc", "cwc", ".C."] },
+  sacek:   { rows: [".nn.", "nnnn", "nbnn", "nnnn"] },
+};
+const trashImg = {};
+function mk(rows, pal = PAL){ const h = rows.length, w = rows[0].length, c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
+  rows.forEach((r, y) => [...r].forEach((ch, x) => { if (pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x, y, 1, 1); } })); return c; }
+for (const k in TRASH) trashImg[k] = mk(TRASH[k].rows);
+
+// ============ TYPY LIDÍ ============
+const TYPES = [
+  { id:'turista', nazev:'Turista', popis:'Hází papírky, plechovky a noviny.', cena:10, int:3, items:['papir', 'plechovka', 'kelimek', 'noviny'], hod:1, shirt:'#4d96ff', hair:'#5a3818', kind:'walk' },
+  { id:'pes', nazev:'Pejsek', popis:'Dělá bobky na trávník. Fuj, ale vyplatí se!', cena:120, int:6, items:['bobek'], hod:6, kind:'dog' },
+  { id:'svacinar', nazev:'Svačinář', popis:'Nechává po sobě banány, jablka a krabice od pizzy.', cena:900, int:5, items:['banan', 'jablko', 'pizza', 'sacek'], hod:22, shirt:'#ff9a3d', hair:'#1a1a2a', kind:'walk' },
+  { id:'maminka', nazev:'Maminka s kočárkem', popis:'Hází použité plenky. Smrdí, ale jsou cenné!', cena:6500, int:7, items:['plenka'], hod:95, shirt:'#ff9ad8', hair:'#c99a1a', kind:'pram' },
+  { id:'party', nazev:'Párty parta', popis:'Hází lahve, kelímky a plechovky. Hodně!', cena:42000, int:3, items:['lahev', 'kelimek', 'plechovka'], hod:260, shirt:'#c58bff', hair:'#ff5c5c', kind:'party' },
+  { id:'ufo', nazev:'Mimozemšťan', popis:'Létá nad parkem a shazuje vesmírný šrot.', cena:320000, int:6, items:['sroub', 'krystal'], hod:2200, kind:'ufo' },
+];
+
+// ============ ULOŽENÁ HRA ============
+const KEY = 'park_save';
+let G;
+function fresh(){ return { money: 0, total: 0, own: { turista: 2 }, lvl: {}, cap: 0, uklizeci: 0, ukSpd: 0, hrabe: 0, auta: 1, autaSpd: 0, recyk: 0, intro: false, t: Date.now() }; }
+function load(){ try { G = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { G = fresh(); } }
+function save(){ G.t = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(G)); } catch (e) {} }
+load();
+const own = id => G.own[id] || 0, lvl = id => G.lvl[id] || 0;
+const capacity = () => 10 + G.cap * 10;
+const typeCost = t => Math.ceil(t.cena * Math.pow(1.15, own(t.id)));
+const upCost = t => Math.ceil(t.cena * 6 * Math.pow(3.2, lvl(t.id)));
+const value = (t) => t.hod * Math.pow(2, lvl(t.id));
+const tripTime = () => Math.max(3, 15 * Math.pow(0.87, G.autaSpd));
+const truckInterval = () => tripTime() / G.auta;
+const radius = () => 7 + G.hrabe * 2.5;
+const ukSpeed = () => 16 * (1 + G.ukSpd * 0.3);
+const recykBonus = () => G.recyk ? 0.1 * G.recyk : 0;
+
+// ============ SCÉNA ============
+let people = [], trash = [], flying = [], pops = [], parts = [], cleaners = [], truck = null, nextTruck = 3, tapFx = [];
+let fill = 0, binTip = 0, fullMsgT = 0;
+function resize(){
+  DPR = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+  topH = $('top').getBoundingClientRect().height; shopH = Math.round(Math.max(210, H * 0.36));
+  $('shop').style.height = shopH + 'px';
+  const ch = H - topH - shopH;
+  cv.style.top = topH + 'px'; cv.style.height = ch + 'px'; cv.style.width = W + 'px';
+  cv.width = Math.round(W * DPR); cv.height = Math.round(ch * DPR);
+  S = W / LW; LH = Math.round(ch / S); off.width = LW; off.height = LH;
+  parkH = LH - 30;
+  buildBg(); syncPeople();
+  for (const q of trash) { q.x = Math.min(LW - 3, q.x); q.y = Math.min(parkH - 3, q.y); }
+}
+const CON = () => ({ x: LW - 24, y: parkH + 1 });   // levý horní roh kontejneru
+function onPath(x, y){ const dx = (x - path.cx) / path.rx, dy = (y - path.cy) / path.ry, d = Math.sqrt(dx * dx + dy * dy); return Math.abs(d - 1) * Math.min(path.rx, path.ry) < 3; }
+function inPond(x, y){ const dx = (x - pond.cx) / pond.rx, dy = (y - pond.cy) / pond.ry; return dx * dx + dy * dy < 1.15; }
+let trees = [], benches = [];
+function buildBg(){
+  path = { cx: LW / 2, cy: parkH * 0.52, rx: LW * 0.36, ry: parkH * 0.34 };
+  pond = { cx: LW / 2, cy: parkH * 0.52, rx: path.rx * 0.42, ry: path.ry * 0.38 };
+  const c = document.createElement('canvas'); c.width = LW; c.height = LH; const g = c.getContext('2d');
+  let seed = 7; const R = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  // tráva
+  for (let y = 0; y < parkH; y++) for (let x = 0; x < LW; x++) {
+    const r = R(); g.fillStyle = r < .08 ? '#3a8a3a' : r < .16 ? '#5cbf4a' : '#4aa83e'; g.fillRect(x, y, 1, 1);
+  }
+  // cestička (ovál + cesta dolů k chodníku)
+  for (let y = 0; y < parkH; y++) for (let x = 0; x < LW; x++) {
+    const dx = (x - path.cx) / path.rx, dy = (y - path.cy) / path.ry, d = Math.sqrt(dx * dx + dy * dy);
+    const dist = Math.abs(d - 1) * Math.min(path.rx, path.ry);
+    const down = Math.abs(x - path.cx) < 3.5 && y > path.cy + path.ry - 1;
+    if (dist < 3.2 || down) { g.fillStyle = R() < .15 ? '#c9a878' : '#d9bc8c'; g.fillRect(x, y, 1, 1); }
+    else if (dist < 4.2) { g.fillStyle = '#3a8a3a'; g.fillRect(x, y, 1, 1); }
+  }
+  // rybníček
+  for (let y = 0; y < parkH; y++) for (let x = 0; x < LW; x++) {
+    const dx = (x - pond.cx) / pond.rx, dy = (y - pond.cy) / pond.ry, d = dx * dx + dy * dy;
+    if (d < 1) { g.fillStyle = d > .75 ? '#3a7ad6' : (R() < .05 ? '#9fd8ff' : '#4d96ff'); g.fillRect(x, y, 1, 1); }
+    else if (d < 1.2) { g.fillStyle = '#8a7a6a'; g.fillRect(x, y, 1, 1); }
+  }
+  // kytičky
+  for (let k = 0; k < LW * parkH / 90; k++) { const x = R() * LW | 0, y = R() * parkH | 0; if (onPath(x, y) || inPond(x, y)) continue; g.fillStyle = ['#ffffff', '#ffd84a', '#ff9ad8', '#c58bff'][R() * 4 | 0]; g.fillRect(x, y, 1, 1); }
+  // stromy a lavičky (ukládám je, kreslí se přes lidi)
+  trees = []; benches = [];
+  for (let k = 0; k < 40 && trees.length < Math.round(LW * parkH / 900); k++) {
+    const x = 6 + R() * (LW - 12), y = 8 + R() * (parkH - 14);
+    if (onPath(x, y) || onPath(x, y + 4) || inPond(x, y + 3) || Math.hypot(x - pond.cx, y - pond.cy) < pond.rx + 6) continue;
+    if (x > LW - 30 && y > parkH - 18) continue;
+    if (trees.some(t => Math.hypot(t.x - x, t.y - y) < 14)) continue;
+    trees.push({ x, y, s: R() < .5 ? 1 : 0 });
+  }
+  for (const a of [0.25, 1.25, 2.1, 3.6, 4.6, 5.5]) benches.push({ x: path.cx + Math.cos(a) * (path.rx + 6), y: path.cy + Math.sin(a) * (path.ry + 6) });
+  for (const b of benches) { g.fillStyle = '#8a5a2a'; g.fillRect(Math.round(b.x) - 3, Math.round(b.y), 7, 2); g.fillStyle = '#5a3818'; g.fillRect(Math.round(b.x) - 3, Math.round(b.y) + 2, 1, 1); g.fillRect(Math.round(b.x) + 3, Math.round(b.y) + 2, 1, 1); g.fillStyle = '#b07a3a'; g.fillRect(Math.round(b.x) - 3, Math.round(b.y) - 2, 7, 1); }
+  // lampa
+  for (const a of [0.8, 3.9]) { const x = Math.round(path.cx + Math.cos(a) * (path.rx - 6)), y = Math.round(path.cy + Math.sin(a) * (path.ry - 5)); g.fillStyle = '#2c3778'; g.fillRect(x, y - 7, 1, 8); g.fillStyle = '#ffd166'; g.fillRect(x - 1, y - 9, 3, 2); }
+  // chodník
+  for (let y = parkH; y < parkH + 8; y++) for (let x = 0; x < LW; x++) { g.fillStyle = (x % 8 === 0 || y === parkH + 4) ? '#8a90a8' : (y === parkH ? '#c9cfe6' : '#a8aec4'); g.fillRect(x, y, 1, 1); }
+  // silnice
+  for (let y = parkH + 8; y < LH; y++) for (let x = 0; x < LW; x++) { g.fillStyle = y === parkH + 8 ? '#5a5f78' : (R() < .06 ? '#3a3e52' : '#33374a'); g.fillRect(x, y, 1, 1); }
+  for (let x = 2; x < LW; x += 10) { g.fillStyle = '#ffd84a'; g.fillRect(x, parkH + 19, 5, 1); }
+  bgImg = c;
+}
+function drawTree(t){
+  const x = Math.round(t.x), y = Math.round(t.y);
+  o.fillStyle = 'rgba(0,0,0,.25)'; o.fillRect(x - 5, y + 5, 11, 2);
+  o.fillStyle = '#6a4220'; o.fillRect(x, y + 1, 2, 5);
+  const leaf = [[-4, -3, 10, 5], [-3, -5, 8, 2], [-5, -1, 12, 3], [-3, 2, 8, 1]];
+  for (const [a, b, w, h] of leaf) { o.fillStyle = t.s ? '#2a7a3a' : '#2f8a3f'; o.fillRect(x + a, y + b, w, h); }
+  o.fillStyle = t.s ? '#3fbf5a' : '#4ad06a'; o.fillRect(x - 3, y - 4, 4, 3); o.fillRect(x + 1, y - 2, 3, 2);
+  if (t.s) { o.fillStyle = '#ff5c5c'; o.fillRect(x - 2, y - 1, 1, 1); o.fillRect(x + 3, y + 1, 1, 1); }
+}
+
+// ============ POSTAVIČKY ============
+function syncPeople(){
+  for (const t of TYPES) {
+    const n = Math.min(own(t.id), t.kind === 'ufo' ? 3 : 7);
+    let have = people.filter(p => p.t === t);
+    while (have.length < n) { const p = newPerson(t); people.push(p); have.push(p); }
+    while (have.length > n) { const p = have.pop(); people.splice(people.indexOf(p), 1); }
+  }
+  while (cleaners.length < Math.min(G.uklizeci, 8)) cleaners.push({ x: LW - 30 + Math.random() * 6, y: parkH - 4, target: null, f: 0, wait: 0 });
+}
+function newPerson(t){
+  const p = { t, a: Math.random() * 6.283, dir: Math.random() < .5 ? 1 : -1, sp: 0.12 + Math.random() * 0.08, f: Math.random() * 10, throwT: Math.random() * t.int, x: 0, y: 0, tx: 0, ty: 0, skin: ['#f2c49a', '#d9a070', '#a86a40', '#f8d8b8'][Math.random() * 4 | 0] };
+  if (t.kind === 'dog') { p.x = 10 + Math.random() * (LW - 20); p.y = 6 + Math.random() * (parkH - 12); p.tx = p.x; p.ty = p.y; p.col = ['#b07a3a', '#e8e2d0', '#5a3818', '#1a1a2a'][Math.random() * 4 | 0]; }
+  if (t.kind === 'ufo') { p.x = Math.random() * LW; p.y = 6 + Math.random() * parkH * 0.4; p.tx = Math.random() * LW; p.ty = 6 + Math.random() * (parkH - 20); }
+  return p;
+}
+function posOnPath(p){ return { x: path.cx + Math.cos(p.a) * path.rx, y: path.cy + Math.sin(p.a) * path.ry - 3 }; }
+
+function drawPerson(x, y, shirt, hair, skin, f, extra){
+  x = Math.round(x); y = Math.round(y);
+  const step = (f | 0) % 2;
+  o.fillStyle = 'rgba(0,0,0,.25)'; o.fillRect(x - 2, y + 4, 5, 1);
+  o.fillStyle = '#2c3778'; o.fillRect(x - 1, y + 1, 1, step ? 3 : 2); o.fillRect(x + 1, y + 1, 1, step ? 2 : 3);  // nohy
+  o.fillStyle = shirt; o.fillRect(x - 1, y - 3, 3, 4); o.fillRect(x - 2, y - 2, 1, 2); o.fillRect(x + 2, y - 2, 1, 2);
+  o.fillStyle = skin; o.fillRect(x - 1, y - 6, 3, 3); o.fillRect(x - 2, y, 1, 1); o.fillRect(x + 2, y, 1, 1);
+  o.fillStyle = hair; o.fillRect(x - 1, y - 7, 3, 1); o.fillRect(x - 1, y - 6, 1, 1);
+  o.fillStyle = '#1a1a2a'; o.fillRect(x + 1, y - 5, 1, 1);
+  if (extra === 'party') { o.fillStyle = '#ffd84a'; o.fillRect(x, y - 9, 1, 2); o.fillStyle = '#ff5c5c'; o.fillRect(x - 1, y - 8, 3, 1); o.fillStyle = '#3fbf5a'; o.fillRect(x + 3, y - 3, 1, 3); }
+  if (extra === 'vest') { o.fillStyle = '#ff9a3d'; o.fillRect(x - 1, y - 3, 3, 3); o.fillStyle = '#ffd84a'; o.fillRect(x - 1, y - 2, 3, 1); }
+}
+function drawDog(p){
+  const x = Math.round(p.x), y = Math.round(p.y), d = p.tx >= p.x ? 1 : -1, step = (p.f | 0) % 2;
+  o.fillStyle = 'rgba(0,0,0,.25)'; o.fillRect(x - 3, y + 2, 7, 1);
+  o.fillStyle = p.col; o.fillRect(x - 3, y - 2, 6, 3);
+  o.fillRect(x + (d > 0 ? 2 : -4), y - 4, 3, 3);   // hlava
+  o.fillStyle = '#1a1a2a'; o.fillRect(x + (d > 0 ? 4 : -4), y - 3, 1, 1);
+  o.fillStyle = p.col; o.fillRect(x + (d > 0 ? -4 : 3), y - 3 - step, 1, 2);   // ocásek
+  o.fillRect(x - 3, y + 1, 1, step ? 1 : 2); o.fillRect(x + 2, y + 1, 1, step ? 2 : 1);
+  o.fillStyle = '#ff5c5c'; o.fillRect(x + (d > 0 ? 1 : -2), y - 2, 1, 1);   // obojek
+}
+function drawPram(x, y, f){
+  x = Math.round(x); y = Math.round(y);
+  o.fillStyle = 'rgba(0,0,0,.25)'; o.fillRect(x + 2, y + 4, 7, 1);
+  o.fillStyle = '#4d96ff'; o.fillRect(x + 3, y - 2, 5, 3); o.fillRect(x + 6, y - 4, 2, 2);
+  o.fillStyle = '#ffffff'; o.fillRect(x + 4, y - 2, 2, 1);
+  o.fillStyle = '#1a1a2a'; o.fillRect(x + 3, y + 2, 1, 1); o.fillRect(x + 7, y + 2, 1, 1);
+  o.fillStyle = '#8a90a8'; o.fillRect(x + 2, y - 2, 1, 1);
+}
+function drawUfo(p, t){
+  const x = Math.round(p.x), y = Math.round(p.y);
+  o.fillStyle = 'rgba(0,0,0,.18)'; o.fillRect(x - 4, y + 10, 9, 1);
+  o.fillStyle = '#9fd8ff'; o.fillRect(x - 2, y - 3, 5, 2);
+  o.fillStyle = '#7dffa8'; o.fillRect(x, y - 3, 1, 1);
+  o.fillStyle = '#8a90a8'; o.fillRect(x - 5, y - 1, 11, 2);
+  o.fillStyle = '#5a5f78'; o.fillRect(x - 3, y + 1, 7, 1);
+  o.fillStyle = (t * 6 | 0) % 2 ? '#ffd84a' : '#ff5c5c'; o.fillRect(x - 4, y, 1, 1); o.fillRect(x, y, 1, 1); o.fillRect(x + 4, y, 1, 1);
+}
+function drawContainer(x, y, tip){
+  x = Math.round(x); y = Math.round(y);
+  if (tip > 0.5) {   // převrácený nad autem
+    o.fillStyle = '#2a7a3a'; o.fillRect(x, y, 14, 9); o.fillStyle = '#3fbf5a'; o.fillRect(x + 1, y + 1, 12, 7);
+    o.fillStyle = '#1a1a2a'; o.fillRect(x, y + 9, 14, 1);
+    return;
+  }
+  o.fillStyle = 'rgba(0,0,0,.3)'; o.fillRect(x, y + 12, 15, 1);
+  o.fillStyle = '#2a7a3a'; o.fillRect(x, y + 2, 14, 9);
+  o.fillStyle = '#3fbf5a'; o.fillRect(x + 1, y + 3, 12, 7);
+  o.fillStyle = '#2a7a3a'; for (let k = 3; k < 13; k += 3) o.fillRect(x + k, y + 4, 1, 5);
+  const lv = Math.min(1, fill / capacity());
+  // odpadky vykukují
+  if (lv > 0.3) { o.fillStyle = '#ffffff'; o.fillRect(x + 3, y + 1, 2, 1); o.fillStyle = '#ff5c5c'; o.fillRect(x + 8, y + 1, 2, 1); }
+  if (lv > 0.7) { o.fillStyle = '#ffd84a'; o.fillRect(x + 5, y, 2, 1); o.fillStyle = '#c58a4a'; o.fillRect(x + 10, y, 2, 1); }
+  o.fillStyle = lv >= 1 ? '#ff5c5c' : '#2a5a2a'; o.fillRect(x - 1, y + 1, 16, 1);   // víko
+  o.fillStyle = '#1a1a2a'; o.fillRect(x + 1, y + 11, 2, 1); o.fillRect(x + 11, y + 11, 2, 1);
+}
+function drawTruck(tr, t){
+  const x = Math.round(tr.x), y = Math.round(parkH + 12), step = (t * 8 | 0) % 2;
+  o.fillStyle = 'rgba(0,0,0,.35)'; o.fillRect(x + 1, y + 11, 30, 1);
+  // korba
+  o.fillStyle = '#2a7a3a'; o.fillRect(x, y, 21, 9);
+  o.fillStyle = '#3fbf5a'; o.fillRect(x + 1, y + 1, 19, 6);
+  o.fillStyle = '#ffffff'; o.fillRect(x + 1, y + 5, 19, 1);
+  o.fillStyle = '#ffd84a'; o.fillRect(x + 3, y + 2, 1, 2); o.fillRect(x + 6, y + 2, 1, 2); o.fillRect(x + 9, y + 2, 1, 2);
+  o.fillStyle = '#1a1a2a'; o.fillRect(x - 1, y + 1, 1, 7);   // zadní lis
+  o.fillStyle = '#5a5f78'; o.fillRect(x - 2, y + 3, 1, 5);
+  // kabina
+  o.fillStyle = '#ffffff'; o.fillRect(x + 21, y + 2, 9, 7);
+  o.fillStyle = '#9fd8ff'; o.fillRect(x + 25, y + 3, 4, 3);
+  o.fillStyle = '#3fbf5a'; o.fillRect(x + 21, y + 7, 9, 2);
+  o.fillStyle = '#ffd84a'; o.fillRect(x + 29, y + 7, 1, 1);
+  // maják
+  o.fillStyle = step ? '#ff9a3d' : '#ffd84a'; o.fillRect(x + 23, y + 1, 2, 1);
+  // kola
+  for (const wx of [x + 3, x + 15, x + 25]) { o.fillStyle = '#1a1a2a'; o.fillRect(wx, y + 9, 3, 3); o.fillRect(wx - 1, y + 10, 5, 1); o.fillStyle = '#8a90a8'; o.fillRect(wx + (tr.moving ? step : 0) + 0, y + 10, 1, 1); o.fillRect(wx + 1, y + 10, 1, 1); }
+  // popelář na stupačce
+  if (tr.state !== 'lift') { o.fillStyle = '#ff9a3d'; o.fillRect(x - 2, y - 1, 2, 3); o.fillStyle = '#f2c49a'; o.fillRect(x - 2, y - 3, 2, 2); }
+}
+
+// ============ HRA ============
+function spawnTrash(type, x, y, item){
+  if (trash.length >= 80) return;
+  let tx, ty, k = 0;
+  do { tx = x + (Math.random() - .5) * 18; ty = y + 3 + (Math.random() - .3) * 10; k++; } while (k < 10 && (inPond(tx, ty) || ty > parkH - 3 || ty < 3 || tx < 3 || tx > LW - 3));
+  if (inPond(tx, ty) || ty > parkH - 3) return;
+  if (item === 'bobek') { tx = x - 3; ty = y + 1; }
+  trash.push({ x, y: y - 4, sx: x, sy: y - 4, tx, ty, t: 0, dur: item === 'bobek' ? 0.15 : 0.5, item, val: value(type), age: 0, fly: Math.random() * 6 });
+}
+function collectAt(lx, ly){
+  let got = 0; const r = radius();
+  for (const q of trash) {
+    if (q.done || q.t < q.dur) continue;
+    if (Math.hypot(q.tx - lx, q.ty - ly) > r) continue;
+    if (fill + flying.length >= capacity()) { fullMsgT = 1.2; break; }
+    pickUp(q); got++;
+  }
+  if (got) { trash = trash.filter(q => !q.done); snd(700 + Math.random() * 200, 0.05, 0.05, 'square', 300); }
+}
+function pickUp(q){
+  q.done = true;
+  G.money += q.val; G.total += q.val;
+  const c = CON();
+  flying.push({ x: q.tx, y: q.ty, sx: q.tx, sy: q.ty, ex: c.x + 7, ey: c.y + 2, t: 0, item: q.item });
+  pops.push({ x: q.tx, y: q.ty, t: 0, txt: '+' + fmt(q.val) });
+}
+function update(dt, t){
+  // lidé chodí a hází
+  for (const p of people) {
+    const ty = p.t; p.f += dt * 6;
+    const totalOwned = own(ty.id), visible = people.filter(q => q.t === ty).length || 1;
+    const myInt = ty.int / (totalOwned / visible);
+    if (ty.kind === 'dog') {
+      const dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy);
+      if (d < 1) { if (Math.random() < 0.02) { let k = 0; do { p.tx = 6 + Math.random() * (LW - 12); p.ty = 6 + Math.random() * (parkH - 12); k++; } while (k < 10 && (inPond(p.tx, p.ty) || onPath(p.tx, p.ty))); } p.f -= dt * 6; }
+      else { const nx = p.x + dx / d * 12 * dt, ny = p.y + dy / d * 12 * dt; if (inPond(nx, ny)) { p.tx = p.x + (p.x - pond.cx) * 0.6; p.ty = p.y + (p.y - pond.cy) * 0.6; p.tx = Math.max(6, Math.min(LW - 6, p.tx)); p.ty = Math.max(6, Math.min(parkH - 6, p.ty)); } else { p.x = nx; p.y = ny; } }
+    } else if (ty.kind === 'ufo') {
+      const dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy);
+      if (d < 2) { p.tx = 8 + Math.random() * (LW - 16); p.ty = 8 + Math.random() * (parkH - 24); }
+      else { p.x += dx / d * 18 * dt; p.y += dy / d * 18 * dt; }
+    } else {
+      p.a += p.dir * p.sp * dt; const q = posOnPath(p); p.x = q.x; p.y = q.y;
+    }
+    p.throwT -= dt;
+    if (p.throwT <= 0) { p.throwT = myInt * (0.7 + Math.random() * 0.6); const it = ty.items[Math.random() * ty.items.length | 0]; spawnTrash(ty, p.x, p.y + (ty.kind === 'ufo' ? 8 : 0), it); if (ty.kind === 'ufo') p.beam = 0.4; }
+    if (p.beam) p.beam = Math.max(0, p.beam - dt);
+  }
+  // odpadky dopadají
+  for (const q of trash) { q.age += dt; if (q.t < q.dur) { q.t += dt; const k = Math.min(1, q.t / q.dur); q.x = q.sx + (q.tx - q.sx) * k; q.y = q.sy + (q.ty - q.sy) * k - Math.sin(k * Math.PI) * 8; if (k >= 1) { q.x = q.tx; q.y = q.ty; } } }
+  // uklízeči
+  for (const c of cleaners) {
+    c.f += dt * 6;
+    if (c.wait > 0) { c.wait -= dt; continue; }
+    if (!c.target || c.target.done) {
+      let best = null, bd = 1e9;
+      for (const q of trash) { if (q.done || q.claimed || q.t < q.dur) continue; const d = Math.hypot(q.tx - c.x, q.ty - c.y); if (d < bd) { bd = d; best = q; } }
+      if (best) { best.claimed = true; c.target = best; } else { c.f -= dt * 6; continue; }
+    }
+    const q = c.target, dx = q.tx - c.x, dy = q.ty - c.y, d = Math.hypot(dx, dy);
+    if (d < 1.5) {
+      if (fill + flying.length < capacity()) { pickUp(q); trash = trash.filter(z => !z.done); c.target = null; c.wait = 0.35; }
+      else { c.f -= dt * 6; }
+    } else { const sp = ukSpeed(); c.x += dx / d * sp * dt; c.y += dy / d * sp * dt; }
+  }
+  // letící odpadky do kontejneru
+  for (const f of flying) {
+    f.t += dt * 1.6; const k = Math.min(1, f.t);
+    f.x = f.sx + (f.ex - f.sx) * k; f.y = f.sy + (f.ey - f.sy) * k - Math.sin(k * Math.PI) * 18;
+    if (k >= 1) { f.done = true; fill++; binTip = 0.15; }
+  }
+  flying = flying.filter(f => !f.done);
+  for (const p of pops) p.t += dt; pops = pops.filter(p => p.t < 0.9);
+  for (const p of tapFx) p.t += dt; tapFx = tapFx.filter(p => p.t < 0.3);
+  for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 60 * dt; q.t -= dt; } parts = parts.filter(q => q.t > 0);
+  binTip = Math.max(0, binTip - dt); fullMsgT = Math.max(0, fullMsgT - dt);
+  // popelářské auto
+  const c = CON();
+  if (!truck) { nextTruck -= dt; if (nextTruck <= 0 && fill > 0) truck = { x: -36, state: 'in', t: 0, moving: true }; }
+  else {
+    const sp = 45 * (1 + G.autaSpd * 0.12), stopX = c.x - 1;
+    if (truck.state === 'in') { truck.x += sp * dt; if (truck.x >= stopX) { truck.x = stopX; truck.state = 'lift'; truck.t = 0; truck.moving = false; snd(180, 0.3, 0.05, 'sawtooth', -40); } }
+    else if (truck.state === 'lift') {
+      truck.t += dt;
+      if (truck.t > 0.5 && truck.t < 1.3 && fill > 0) {
+        if (Math.random() < 0.6) parts.push({ x: c.x + 3 + Math.random() * 8, y: parkH + 11, vx: (Math.random() - .5) * 10, vy: 0, t: 0.35, c: ['#ffffff', '#ff5c5c', '#ffd84a', '#c58a4a', '#3fbf5a'][Math.random() * 5 | 0] });
+      }
+      if (truck.t >= 1.3 && !truck.emptied) {
+        truck.emptied = true;
+        const bonus = Math.floor(fill * avgItemValue() * recykBonus());
+        if (bonus > 0) { G.money += bonus; G.total += bonus; pops.push({ x: c.x + 4, y: c.y - 4, t: 0, txt: '♻ +' + fmt(bonus) }); }
+        fill = 0; snd(120, 0.4, 0.07, 'sawtooth', -50);
+      }
+      if (truck.t >= 1.9) { truck.state = 'out'; truck.moving = true; }
+    } else if (truck.state === 'out') { truck.x += sp * dt; if (truck.x > LW + 4) { truck = null; nextTruck = truckInterval(); } }
+  }
+}
+let avgCache = 1;
+function avgItemValue(){ let s = 0, n = 0; for (const t of TYPES) { const k = own(t.id) / t.int; s += k * value(t); n += k; } avgCache = n ? s / n : 1; return avgCache; }
+function incomePerSec(){
+  let litter = 0; for (const t of TYPES) litter += own(t.id) / t.int * value(t);
+  return litter;
+}
+
+function draw(t){
+  o.drawImage(bgImg, 0, 0);
+  // odpadky na zemi
+  for (const q of trash) {
+    const img = trashImg[q.item], x = Math.round(q.x - img.width / 2), y = Math.round(q.y - img.height / 2);
+    if (q.t >= q.dur) { o.fillStyle = 'rgba(0,0,0,.2)'; o.fillRect(x, y + img.height, img.width, 1); }
+    o.drawImage(img, x, y);
+    if (q.item === 'bobek' && q.t >= q.dur) { const a = t * 5 + q.fly; o.fillStyle = '#1a1a2a'; o.fillRect(Math.round(q.x + Math.cos(a) * 3), Math.round(q.y - 4 + Math.sin(a * 1.3) * 2), 1, 1); }
+    if (q.item === 'krystal' && (t * 4 + q.fly | 0) % 3 === 0) { o.fillStyle = '#ffffff'; o.fillRect(x + 1, y - 1, 1, 1); }
+  }
+  // postavy seřazené podle y
+  const ents = [];
+  for (const p of people) ents.push({ y: p.y, d: () => {
+    const k = p.t.kind;
+    if (k === 'dog') drawDog(p);
+    else if (k === 'ufo') { if (p.beam) { o.globalAlpha = .35; o.fillStyle = '#7dffa8'; o.fillRect(Math.round(p.x) - 2, Math.round(p.y) + 2, 5, 9); o.globalAlpha = 1; } drawUfo(p, t); }
+    else if (k === 'pram') { drawPerson(p.x, p.y, p.t.shirt, p.t.hair, p.skin, p.f); drawPram(p.x, p.y, p.f); }
+    else drawPerson(p.x, p.y, p.t.shirt, p.t.hair, p.skin, p.f, k === 'party' ? 'party' : null);
+  } });
+  for (const c of cleaners) ents.push({ y: c.y, d: () => { drawPerson(c.x, c.y, '#3fbf5a', '#5a3818', '#f2c49a', c.f, 'vest'); o.fillStyle = '#c9a878'; o.fillRect(Math.round(c.x) + 3, Math.round(c.y) - 4, 1, 7); o.fillStyle = '#ffd84a'; o.fillRect(Math.round(c.x) + 2, Math.round(c.y) + 3, 3, 1); } });
+  for (const tr of trees) ents.push({ y: tr.y + 4, d: () => drawTree(tr) });
+  ents.sort((a, b) => a.y - b.y).forEach(e => e.d());
+  // kontejner a auto
+  const c = CON();
+  if (truck) drawTruck(truck, t);
+  let cy = c.y - (binTip > 0 ? 1 : 0), tip = 0;
+  if (truck && truck.state === 'lift') { const k = truck.t; if (k > 0.3 && k < 1.6) { cy = parkH + 2; tip = 1; } }
+  drawContainer(c.x, cy, tip);
+  for (const q of parts) { o.fillStyle = q.c; o.fillRect(q.x | 0, q.y | 0, 1, 1); }
+  for (const f of flying) { const img = trashImg[f.item]; o.drawImage(img, Math.round(f.x - img.width / 2), Math.round(f.y - img.height / 2)); }
+  for (const p of tapFx) { o.fillStyle = 'rgba(255,255,255,' + (1 - p.t / 0.3) + ')'; const r = radius() * (0.5 + p.t / 0.6); for (let k = 0; k < 16; k++) { const a = k / 16 * 6.283; o.fillRect(Math.round(p.x + Math.cos(a) * r), Math.round(p.y + Math.sin(a) * r), 1, 1); } }
+  // na obrazovku
+  cx.setTransform(1, 0, 0, 1, 0, 0); cx.imageSmoothingEnabled = false;
+  cx.drawImage(off, 0, 0, cv.width, LH * S * DPR);
+  // texty
+  const fs = Math.round(11 * DPR);
+  cx.font = '900 ' + fs + 'px ui-monospace,Menlo,monospace'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.lineWidth = 3 * DPR; cx.strokeStyle = '#05061a';
+  for (const p of pops) { const a = 1 - p.t / 0.9; cx.globalAlpha = a; const x = p.x * S * DPR, y = (p.y - 6 - p.t * 14) * S * DPR; cx.strokeText(p.txt, x, y); cx.fillStyle = p.txt[0] === '♻' ? '#7dffa8' : '#ffd166'; cx.fillText(p.txt, x, y); }
+  cx.globalAlpha = 1;
+  if (fill >= capacity() || fullMsgT > 0) {
+    const x = (c.x + 7) * S * DPR, y = (c.y - 8) * S * DPR;
+    if ((t * 3 | 0) % 2 || fullMsgT > 0) { cx.strokeText('PLNÝ!', x - 4 * DPR, y); cx.fillStyle = '#ff6b6b'; cx.fillText('PLNÝ!', x - 4 * DPR, y); }
+    if (fullMsgT > 0) { cx.font = '800 ' + Math.round(10 * DPR) + 'px ui-monospace,Menlo,monospace'; const m = 'Počkej na popeláře!'; const mx = cv.width / 2, my = 14 * DPR; cx.strokeText(m, mx, my); cx.fillStyle = '#ffffff'; cx.fillText(m, mx, my); }
+  }
+}
+
+// ============ OVLÁDÁNÍ ============
+let dragging = false;
+function tap(e){ const r = cv.getBoundingClientRect(), lx = (e.clientX - r.left) / S, ly = (e.clientY - r.top) / S; collectAt(lx, ly); return { lx, ly }; }
+cv.addEventListener('pointerdown', e => { audioInit(); dragging = true; const p = tap(e); tapFx.push({ x: p.lx, y: p.ly, t: 0 }); try { cv.setPointerCapture(e.pointerId); } catch (_) {} });
+cv.addEventListener('pointermove', e => { if (dragging) tap(e); });
+const endDrag = () => { dragging = false; };
+cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+
+// ============ ZVUK ============
+let AC = null;
+function audioInit(){ if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {} } if (AC && AC.state === 'suspended') AC.resume(); }
+function snd(f, d, v, type = 'square', slide = 0){
+  if (!AC) return; const t = AC.currentTime, osc = AC.createOscillator(), g = AC.createGain();
+  osc.type = type; osc.frequency.setValueAtTime(f, t); if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + d); osc.connect(g); g.connect(AC.destination); osc.start(t); osc.stop(t + d);
+}
+
+// ============ OBCHOD ============
+const ICON = {};
+function makeIcons(){
+  const draw = (fn) => { const keep = off.width; const c = document.createElement('canvas'); c.width = 16; c.height = 16; const g = c.getContext('2d'); const old = o; oSwap(g); fn(); oSwap(old); return c.toDataURL(); };
+  ICON.turista = draw(() => drawPerson(8, 10, '#4d96ff', '#5a3818', '#f2c49a', 0));
+  ICON.pes = draw(() => drawDog({ x: 8, y: 10, tx: 20, ty: 10, f: 0, col: '#b07a3a' }));
+  ICON.svacinar = draw(() => drawPerson(8, 10, '#ff9a3d', '#1a1a2a', '#d9a070', 0));
+  ICON.maminka = draw(() => { drawPerson(5, 10, '#ff9ad8', '#c99a1a', '#f8d8b8', 0); drawPram(5, 10, 0); });
+  ICON.party = draw(() => drawPerson(8, 11, '#c58bff', '#ff5c5c', '#a86a40', 0, 'party'));
+  ICON.ufo = draw(() => drawUfo({ x: 8, y: 8 }, 0));
+  ICON.uklizec = draw(() => drawPerson(8, 10, '#3fbf5a', '#5a3818', '#f2c49a', 0, 'vest'));
+  ICON.hrabe = draw(() => { o.fillStyle = '#c9a878'; o.fillRect(7, 2, 1, 11); o.fillStyle = '#8a90a8'; o.fillRect(4, 12, 7, 1); for (let k = 4; k < 11; k += 2) o.fillRect(k, 13, 1, 2); });
+  ICON.rychlost = draw(() => { drawPerson(8, 10, '#3fbf5a', '#5a3818', '#f2c49a', 1, 'vest'); o.fillStyle = '#ffd84a'; o.fillRect(1, 6, 3, 1); o.fillRect(2, 9, 3, 1); });
+  ICON.kontejner = draw(() => { const f0 = fill; fill = capacity(); drawContainer(1, 2, 0); fill = f0; });
+  ICON.auto = draw(() => { const keep = parkH; parkH = -9; drawTruck({ x: -14, state: 'in', moving: false }, 0); parkH = keep; });
+  ICON.autoSpd = draw(() => { const keep = parkH; parkH = -9; drawTruck({ x: -14, state: 'in', moving: false }, 0); parkH = keep; o.fillStyle = '#ffd84a'; o.fillRect(0, 4, 3, 1); o.fillRect(0, 7, 2, 1); });
+  ICON.recyk = draw(() => { o.fillStyle = '#3fbf5a'; o.fillRect(5, 3, 6, 2); o.fillRect(3, 6, 2, 5); o.fillRect(11, 6, 2, 5); o.fillRect(5, 12, 6, 2); o.fillStyle = '#7dffa8'; o.fillRect(10, 2, 2, 2); o.fillRect(2, 11, 2, 2); o.fillRect(12, 11, 2, 1); });
+}
+function oSwap(g){ o = g; }
+let tab = 'lide';
+function shopItems(){
+  if (tab === 'lide') return TYPES.map((t, i) => {
+    const unlocked = i === 0 || own(TYPES[i - 1].id) > 0 || own(t.id) > 0;
+    return { id: t.id, icon: ICON[t.id], locked: !unlocked,
+      nm: () => t.nazev + (own(t.id) ? ' <span>×' + own(t.id) + '</span>' : ''),
+      ds: () => unlocked ? t.popis + ' Odpadek: ' + fmt(value(t)) + ' Kč' + (lvl(t.id) ? ' · úroveň ' + (lvl(t.id) + 1) : '') : '🔒 Nejdřív kup: ' + TYPES[i - 1].nazev,
+      btns: [
+        { cls: '', label: () => 'Koupit<small>' + fmt(typeCost(t)) + ' Kč</small>', cost: () => typeCost(t), ok: () => unlocked, act: () => { G.own[t.id] = own(t.id) + 1; syncPeople(); } },
+        { cls: 'up', label: () => '×2 odpadky<small>' + fmt(upCost(t)) + ' Kč</small>', cost: () => upCost(t), ok: () => own(t.id) > 0, act: () => { G.lvl[t.id] = lvl(t.id) + 1; } }
+      ] };
+  });
+  if (tab === 'uklid') return [
+    { id: 'uklizec', icon: ICON.uklizec, nm: () => 'Uklízeč' + (G.uklizeci ? ' <span>×' + G.uklizeci + '</span>' : ''), ds: () => 'Sbírá odpadky za tebe, i když nehraješ!',
+      btns: [{ cls: '', label: () => 'Najmout<small>' + fmt(uklCost()) + ' Kč</small>', cost: uklCost, ok: () => G.uklizeci < 8, act: () => { G.uklizeci++; syncPeople(); } }] },
+    { id: 'rychlost', icon: ICON.rychlost, nm: () => 'Rychlé boty' + (G.ukSpd ? ' <span>úr. ' + G.ukSpd + '</span>' : ''), ds: () => 'Uklízeči chodí o 30 % rychleji.',
+      btns: [{ cls: 'up', label: () => 'Koupit<small>' + fmt(spdCost()) + ' Kč</small>', cost: spdCost, ok: () => G.ukSpd < 10, act: () => { G.ukSpd++; } }] },
+    { id: 'hrabe', icon: ICON.hrabe, nm: () => 'Velké hrábě' + (G.hrabe ? ' <span>úr. ' + G.hrabe + '</span>' : ''), ds: () => 'Jedním klepnutím sebereš víc odpadků kolem prstu.',
+      btns: [{ cls: 'up', label: () => G.hrabe >= 6 ? 'Max<small>&nbsp;</small>' : 'Koupit<small>' + fmt(rakeCost()) + ' Kč</small>', cost: rakeCost, ok: () => G.hrabe < 6, act: () => { G.hrabe++; } }] },
+    { id: 'kontejner', icon: ICON.kontejner, nm: () => 'Větší kontejner', ds: () => 'Vejde se do něj o 10 odpadků víc. Teď: ' + capacity() + '.',
+      btns: [{ cls: 'up', label: () => 'Koupit<small>' + fmt(capCost()) + ' Kč</small>', cost: capCost, ok: () => true, act: () => { G.cap++; } }] },
+  ];
+  return [
+    { id: 'auto', icon: ICON.auto, nm: () => 'Popelářské auto <span>×' + G.auta + '</span>', ds: () => 'Víc aut = kontejner se vyváží častěji. Auto přijede každých ' + truckInterval().toFixed(1).replace('.', ',') + ' s.',
+      btns: [{ cls: '', label: () => G.auta >= 8 ? 'Max<small>&nbsp;</small>' : 'Koupit<small>' + fmt(autoCost()) + ' Kč</small>', cost: autoCost, ok: () => G.auta < 8, act: () => { G.auta++; nextTruck = Math.min(nextTruck, truckInterval()); } }] },
+    { id: 'autoSpd', icon: ICON.autoSpd, nm: () => 'Rychlejší auta' + (G.autaSpd ? ' <span>úr. ' + G.autaSpd + '</span>' : ''), ds: () => 'Auta jezdí rychleji a vrací se dřív.',
+      btns: [{ cls: 'up', label: () => 'Koupit<small>' + fmt(aSpdCost()) + ' Kč</small>', cost: aSpdCost, ok: () => G.autaSpd < 12, act: () => { G.autaSpd++; } }] },
+    { id: 'recyk', icon: ICON.recyk, nm: () => 'Recyklace' + (G.recyk ? ' <span>úr. ' + G.recyk + '</span>' : ''), ds: () => 'Za každý odvezený kontejner dostaneš bonus. Teď: ' + Math.round(recykBonus() * 100) + ' % z hodnoty odpadků.',
+      btns: [{ cls: 'up', label: () => 'Koupit<small>' + fmt(recCost()) + ' Kč</small>', cost: recCost, ok: () => G.recyk < 20, act: () => { G.recyk++; } }] },
+  ];
+}
+const uklCost = () => Math.ceil(150 * Math.pow(2.4, G.uklizeci));
+const spdCost = () => Math.ceil(400 * Math.pow(2.6, G.ukSpd));
+const rakeCost = () => Math.ceil(60 * Math.pow(3.5, G.hrabe));
+const capCost = () => Math.ceil(40 * Math.pow(2.1, G.cap));
+const autoCost = () => Math.ceil(250 * Math.pow(3, G.auta - 1));
+const aSpdCost = () => Math.ceil(120 * Math.pow(2.3, G.autaSpd));
+const recCost = () => Math.ceil(500 * Math.pow(2.5, G.recyk));
+let items = [];
+function renderShop(){
+  items = shopItems();
+  $('list').innerHTML = items.map((it, i) => '<div class="item' + (it.locked ? ' locked' : '') + '"><div class="ic"><img src="' + it.icon + '" alt=""></div><div class="inf"><div class="nm" id="nm' + i + '"></div><div class="ds" id="ds' + i + '"></div></div><div class="bt">' +
+    it.btns.map((b, k) => '<button class="buy ' + b.cls + '" id="b' + i + '_' + k + '"></button>').join('') + '</div></div>').join('');
+  items.forEach((it, i) => it.btns.forEach((b, k) => { $('b' + i + '_' + k).onclick = () => {
+    if (!b.ok() || G.money < b.cost()) return;
+    G.money -= b.cost(); b.act(); save(); snd(520, 0.08, 0.06, 'square'); setTimeout(() => snd(780, 0.12, 0.06, 'square'), 70);
+    const before = items.map(x => x.locked).join(); const after = shopItems().map(x => x.locked).join();
+    if (before !== after) renderShop(); else refreshShop();
+  }; }));
+  refreshShop();
+}
+function refreshShop(){
+  items.forEach((it, i) => {
+    $('nm' + i).innerHTML = it.nm(); $('ds' + i).textContent = it.ds();
+    it.btns.forEach((b, k) => { const el = $('b' + i + '_' + k); el.innerHTML = b.label(); el.disabled = it.locked || !b.ok() || G.money < b.cost(); });
+  });
+}
+$('tabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; tab = b.dataset.t; [...$('tabs').children].forEach(x => x.classList.toggle('on', x === b)); renderShop(); $('list').scrollTop = 0; };
+
+function hud(){
+  $('moneyT').textContent = '💰 ' + fmt(G.money) + ' Kč';
+  const ip = incomePerSec(); $('rateT').textContent = '≈ ' + (ip < 10 ? ip.toFixed(1).replace('.', ',') : fmt(ip)) + ' Kč/s z odpadků';
+  const cap = capacity(); $('binT').textContent = 'Kontejner ' + Math.min(cap, fill) + '/' + cap;
+  $('binFill').style.width = Math.min(100, fill / cap * 100) + '%'; $('binFill').classList.toggle('full', fill >= cap);
+}
+
+// ============ ZATÍMCO JSI BYL PRYČ ============
+function awayEarnings(){
+  const sec = Math.min(3 * 3600, Math.max(0, (Date.now() - (G.t || Date.now())) / 1000));
+  if (sec < 60 || !G.uklizeci) return;
+  const litter = TYPES.reduce((a, t) => a + own(t.id) / t.int, 0);
+  const clean = G.uklizeci * ukSpeed() / 30;
+  const haul = capacity() / truckInterval();
+  const rate = Math.min(litter, clean, haul) * avgItemValue() * 0.6;
+  const earned = Math.floor(rate * sec);
+  if (earned <= 0) return;
+  G.money += earned; G.total += earned; save();
+  const m = Math.round(sec / 60);
+  $('awayT').innerHTML = 'Byl jsi pryč ' + (m >= 60 ? Math.floor(m / 60) + ' h ' + (m % 60) + ' min' : m + ' min') + '.<br>Tvoji uklízeči mezitím vydělali <b style="color:#ffd166">' + fmt(earned) + ' Kč</b>!';
+  $('away').classList.remove('hidden');
+}
+$('awayBtn').onclick = () => $('away').classList.add('hidden');
+$('introBtn').onclick = () => { $('intro').classList.add('hidden'); G.intro = true; save(); audioInit(); };
+
+// ============ SMYČKA ============
+let last = performance.now(), shopT = 0, saveT = 0;
+function loop(now){
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; const t = now / 1000;
+  update(dt, t); draw(t);
+  shopT += dt; if (shopT > 0.25) { shopT = 0; hud(); refreshShop(); }
+  saveT += dt; if (saveT > 5) { saveT = 0; save(); }
+  requestAnimationFrame(loop);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) save(); else { awayEarnings(); last = performance.now(); } });
+addEventListener('pagehide', save);
+$('homeBtn').onclick = () => { save(); location.href = '../../index.html'; };
+addEventListener('resize', resize);
+resize(); makeIcons(); renderShop(); hud();
+if (!G.intro) $('intro').classList.remove('hidden'); else awayEarnings();
+requestAnimationFrame(loop);
+try { if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.getRegistration('../../').then(r => { if (!r) navigator.serviceWorker.register('../../sw.js', { updateViaCache: 'none' }); }).catch(() => {}); } catch (_) {}
+})();
+</script>
+</body>
+</html>

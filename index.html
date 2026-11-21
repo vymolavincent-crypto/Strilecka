@@ -165,7 +165,7 @@ const karta = h => `
   </a>`;
 $('list').innerHTML =
   '<h2>👥 Pro 2 hráče</h2>' + HRY.filter(h => h.hraci === 2).sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0)).map(karta).join('') +
-  '<h2>🚀 Pro 1 hráče</h2>' + HRY.filter(h => h.hraci !== 2).map(karta).join('');
+  '<h2>🚀 Pro 1 hráče</h2>' + HRY.filter(h => h.hraci !== 2).sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0)).map(karta).join('');
 function stavy(){ for (const h of HRY) { const el = document.querySelector('[data-r="' + h.id + '"]'); try { el.textContent = h.stav ? h.stav() : ''; } catch (e) {} } }
 stavy(); addEventListener('pageshow', stavy);
 try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
