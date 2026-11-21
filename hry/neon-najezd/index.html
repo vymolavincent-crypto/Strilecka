@@ -889,11 +889,10 @@ function newGame(){
   clearAll();for(const w of waves)w.on=false;
   lv={};for(const u of UPG)lv[u.id]=0;
   diff=DIFF[diffIdx];
-  ship=shipById(shipId);if(store.get('px_all','0')==='1')for(const id of SHIP_UP[ship.id]||[]){const u=UPG.find(x=>x.id===id);if(u&&u.max)lv[id]=u.max;}shipSpr=buildShip(ship,lv);
-  const mh=ship.hp+perm.hull+diff.lives+(lv.hull||0);
+  ship=shipById(shipId);shipSpr=buildShip(ship,lv);
+  const mh=ship.hp+perm.hull+diff.lives;
   pk={};xp=0;plv=1;pendLv=0;treasureT=0;eventT=0;eventN=0;for(const f of fts)f.on=false;
   player={pu:{rapid:0,triple:0,magnet:0,double:0},vk:0,chT:2,rearT:0,x:GW/2,y:IH*0.8,tx:GW/2,ty:IH*0.8,hp:mh,maxHp:mh,inv:1.5,fireT:0,canT:0,mslT:1,plT:1,shield:false,shdT:0,dt:0,beamT:0,beamY:0,beamOn:false,revive:ship.id==='fenix',drones:[{x:GW/2,y:IH},{x:GW/2,y:IH}],sp:0,spT:0,swarm:0,god:0};
-  if(lv.shd)player.shield=true;
   score=0;crTotal=0;kills=0;toSpawn=0;waveDelay=0.8;boss=null;phase='wave';station=null;fixCount=0;loopN=0;stationWave=0;
   wave=startP*5;curSt=-1;wIn=5;heat=0;crystals=perm.start*60+[0,150,350,600,900,1300,1800][startP];
   chain=0;comboT=0;shake=0;time=0;bannerT=0;slowT=0;flashT=0;ets=1;warpT=0;
@@ -1371,16 +1370,14 @@ function useCode(raw){
   if(!c)return 'Napiš nějaký kód.';
   if(used.includes(c))return 'Tenhle kód už jsi použil.';
   if(c==='VSECHNO'){
-    owned=SHIPS.map(x=>x.id);ownedSk=SKINS.map(x=>x.id);ownedP=BIOMES.map((_,i)=>i);
-    perm={start:5,hull:2,dmg:5,charge:3,mag:2,hunter:3,disc:3};
-    store.set('px_owned',JSON.stringify(owned));store.set('px_skins',JSON.stringify(ownedSk));store.set('px_planets',JSON.stringify(ownedP));savePerm();
-    store.set('px_all','1');
+    owned=SHIPS.map(x=>x.id);ownedP=BIOMES.map((_,i)=>i);
+    store.set('px_owned',JSON.stringify(owned));store.set('px_planets',JSON.stringify(ownedP));
   }else if(c==='5000'){
     bank+=5000;store.set('px_bank',bank);
   }else return 'Tenhle kód neznám.';
   used.push(c);store.set('px_codes',JSON.stringify(used));
   showBank();refreshMenu();snd(880,0.25,'square',0.06,1.6);vib(30);
-  return c==='VSECHNO'?'Odemčeno všechno! Všechny lodě, skiny, planety, trvalá vylepšení a v každé hře začínáš se všemi vylepšeními lodi.':'Připsáno 5 000 krystalů do banky!';
+  return c==='VSECHNO'?'Odemčeny všechny rakety a planety.':'Připsáno 5 000 krystalů do banky!';
 }
 $('codeBtn').onclick=()=>{$('codeUI').classList.remove('hidden');$('codeIn').value='';$('codeMsg').textContent='';snd(660,0.1,'triangle',0.05);};
 $('codeBack').onclick=()=>{$('codeUI').classList.add('hidden');snd(330,0.08,'triangle',0.05);};
