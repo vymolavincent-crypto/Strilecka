@@ -143,6 +143,9 @@ const TYPES = [
   { id:'robot', nazev:'Robot', popis:'Chodí po trávě a ztrácí baterky a šroubky.', cena:2000000, int:50, items:['baterie', 'sroub'], hod:9000, kind:'robot' },
 ];
 
+// druhy lidí, které chodí po celém parku (ostatní jezdí po cestě)
+const ROAM = new Set(['walk', 'kid', 'pram', 'party']);
+
 // ============ ULOŽENÁ HRA ============
 const KEY = 'park_save';
 let G;
@@ -258,9 +261,12 @@ function newPerson(t){
   if (t.kind === 'granny') { const used = people.filter(q => q.t === t).map(q => q.bench); let b = 0; while (used.includes(b) && b < benches.length - 1) b++; p.bench = b; p.pg = Array.from({ length: 4 }, () => ({ dx: (Math.random() - .5) * 16, dy: 2 + Math.random() * 6, hop: Math.random() * 6, tx: 0, ty: 0 })); }
   if (t.kind === 'ufo') { p.x = Math.random() * LW; p.y = 6 + Math.random() * parkH * 0.4; p.tx = Math.random() * LW; p.ty = 6 + Math.random() * (parkH - 20); }
   if (t.kind === 'dog' || t.kind === 'robot') { let k = 0; while (k++ < 30 && (inPond(p.x, p.y) || inPond(p.tx, p.ty))) { p.x = 10 + Math.random() * (LW - 20); p.y = 6 + Math.random() * (parkH - 12); p.tx = p.x; p.ty = p.y; } }
+  if (ROAM.has(t.kind)) { let k = 0; do { p.x = 6 + Math.random() * (LW - 12); p.y = 6 + Math.random() * (parkH - 12); k++; } while (k < 12 && inPond(p.x, p.y)); p.wait = Math.random() * 2; roamTarget(p); }
   return p;
 }
 function posOnPath(p){ return { x: path.cx + Math.cos(p.a) * path.rx, y: path.cy + Math.sin(p.a) * path.ry - 3 }; }
+// nový cíl pro volně chodící člověka (mimo jezírko)
+function roamTarget(p){ let k = 0; do { p.tx = 6 + Math.random() * (LW - 12); p.ty = 6 + Math.random() * (parkH - 12); k++; } while (k < 12 && inPond(p.tx, p.ty)); }
 
 function drawPerson(x, y, shirt, hair, skin, f, extra){
   x = Math.round(x); y = Math.round(y);
@@ -444,6 +450,17 @@ function update(dt, t){
       const dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy);
       if (d < 2) { p.tx = 8 + Math.random() * (LW - 16); p.ty = 8 + Math.random() * (parkH - 24); }
       else { p.x += dx / d * 18 * dt; p.y += dy / d * 18 * dt; }
+    } else if (ROAM.has(ty.kind)) {
+      // chodí volně po celém parku (kolem jezírka)
+      if (p.wait > 0) p.wait -= dt;
+      else {
+        const dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy);
+        if (d < 1.5) { p.wait = Math.random() * 2; roamTarget(p); }
+        else {
+          const sp = p.sp * 60 * dt, nx = p.x + dx / d * sp, ny = p.y + dy / d * sp;
+          if (inPond(nx, ny)) roamTarget(p); else { p.x = nx; p.y = ny; }
+        }
+      }
     } else {
       p.a += p.dir * p.sp * dt; const q = posOnPath(p); p.x = q.x; p.y = q.y;
     }
