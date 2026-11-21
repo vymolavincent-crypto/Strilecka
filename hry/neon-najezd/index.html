@@ -117,7 +117,17 @@ table.lb tr.me td{color:#ffe14d}
     <button class="tile city hidden" id="cityBtn"><i>🏙️</i>MĚSTO</button>
   </div>
   <div class="row2 small"><button class="sec" id="hernaBtn" onclick="location.href='../../index.html'">⌂ HERNA</button><button class="sec" id="musBtn">♫ HUDBA</button><button class="sec" id="tutBtn">? NÁVOD</button></div>
+  <div class="row2 small"><button class="sec" id="codeBtn">🔑 KÓD</button><button class="sec" id="resetBtn">↺ RESETOVAT HRU</button></div>
   <p id="bestMenu" style="opacity:.55;font-size:12px"></p>
+</div>
+
+<div id="codeUI" class="overlay hidden">
+  <div style="font-weight:900;color:#ffe14d;font-size:20px;letter-spacing:2px">KÓD</div>
+  <p class="hint">Napiš kód a potvrď. Každý kód jde použít jen jednou.</p>
+  <input id="codeIn" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="kód" style="font:inherit;font-size:18px;text-transform:uppercase;padding:10px;width:240px;text-align:center;background:#0b0d26;color:#fff;border:3px solid #5a6080;border-radius:10px">
+  <p id="codeMsg" style="color:#7dffa8;min-height:18px"></p>
+  <button id="codeGo">POTVRDIT</button>
+  <button class="sec" id="codeBack">ZPĚT</button>
 </div>
 
 <div id="cityUI" class="hidden">
@@ -513,6 +523,8 @@ const SHIPS=[
    rows:["......y",".....yw",".....vy","v...vVy","vv..vVy","vVv.vVw",".vVvvVy","..vVVVy","...vVvV","...vv.V","....v.."]},
   {id:'fenix',name:'Fénix',desc:'Samonaváděcí střely. Jednou za hru vstane z popela.',price:1700,hp:3,weapon:'homing',eng:2,ramp:'fire',
    rows:[".......r","......rw","......ry","r....rRy","rR..rRoy","rRR.rRoo",".rRRrRoy","..rRRRow","..rRRRRo",".rR.rRRR","rR...R.R","R......."]},
+  {id:'trojlaser',name:'Trojlaser',desc:'Tři lasery: jeden dopředu a dva šikmo do stran. Po bocích mini kulomety.',price:5000,hp:3,weapon:'tri',eng:2,ramp:'cyan',
+   rows:["....w","....c","...cC","...cC","..cCC",".ccCC","bcbCC","bbbCb","bSbSC","bS..C","y.y.C","....o"]},
 ];
 const shipById=id=>SHIPS.find(s=>s.id===id)||SHIPS[0];
 const SKINS=[
@@ -814,6 +826,8 @@ const UPG=[
  {id:'msl', name:'Raketomety',desc:'Samonaváděcí rakety',max:3,cost:[120,240,400]},
  {id:'shd', name:'Štítový generátor',desc:'Štít se sám obnovuje',max:3,cost:[110,220,360]},
  {id:'plasma',name:'Plazmové dělo',desc:'Obří střela, proletí vším',max:2,cost:[260,480]},
+ {id:'lsr', name:'Silnější lasery',desc:'Střely všech tří laserů o 50 % silnější',max:3,cost:[150,300,500]},
+ {id:'mini',name:'Rychlé kulomety',desc:'Mini kulomety na bocích střílí rychleji',max:3,cost:[200,400,650]},
  {id:'fix', name:'Oprava',desc:'Doplní 1 život',max:0,cost:[40]},
 ];
 const PERM=[
@@ -825,7 +839,8 @@ const PERM=[
  {id:'hunter',name:'Lovec krystalů',desc:'+15 % krystalů z nepřátel',max:3,cost:[1000,2500,5000]},
  {id:'disc',name:'Sleva na stanicích',desc:'Vylepšení na stanicích o 10 % levnější',max:3,cost:[1200,2800,6000]},
 ];
-const SUPER={jiskra:{name:'PŘETÍŽENÍ',dur:5},kladivo:{name:'RÁZOVÁ VLNA',dur:0.6},zmije:{name:'ROJ RAKET',dur:1.6},blesk:{name:'ZPOMALENÍ ČASU',dur:5},fenix:{name:'OHNIVÝ KRUH',dur:6}};
+const SHIP_UP={jiskra:['rate','dmg','gun','mag','fix'],kladivo:['dmg','hull','shd','plasma','fix'],zmije:['rate','msl','gun','drone','fix'],blesk:['dmg','mag','shd','hull','fix'],fenix:['msl','drone','hull','shd','fix'],trojlaser:['lsr','mini','rate','hull','fix']};
+const SUPER={trojlaser:{name:'KŘÍŽOVÁ PALBA',dur:4},jiskra:{name:'PŘETÍŽENÍ',dur:5},kladivo:{name:'RÁZOVÁ VLNA',dur:0.6},zmije:{name:'ROJ RAKET',dur:1.6},blesk:{name:'ZPOMALENÍ ČASU',dur:5},fenix:{name:'OHNIVÝ KRUH',dur:6}};
 const PERKS=[
  {id:'pierce',name:'Průrazné střely',desc:'Střely proletí o 1 nepřítele víc',max:3,r:1},
  {id:'crit',name:'Kritický zásah',desc:'15 % šance na trojnásobné poškození',max:3,r:1},
@@ -874,10 +889,11 @@ function newGame(){
   clearAll();for(const w of waves)w.on=false;
   lv={};for(const u of UPG)lv[u.id]=0;
   diff=DIFF[diffIdx];
-  ship=shipById(shipId);shipSpr=buildShip(ship,lv);
-  const mh=ship.hp+perm.hull+diff.lives;
+  ship=shipById(shipId);if(store.get('px_all','0')==='1')for(const id of SHIP_UP[ship.id]||[]){const u=UPG.find(x=>x.id===id);if(u&&u.max)lv[id]=u.max;}shipSpr=buildShip(ship,lv);
+  const mh=ship.hp+perm.hull+diff.lives+(lv.hull||0);
   pk={};xp=0;plv=1;pendLv=0;treasureT=0;eventT=0;eventN=0;for(const f of fts)f.on=false;
   player={pu:{rapid:0,triple:0,magnet:0,double:0},vk:0,chT:2,rearT:0,x:GW/2,y:IH*0.8,tx:GW/2,ty:IH*0.8,hp:mh,maxHp:mh,inv:1.5,fireT:0,canT:0,mslT:1,plT:1,shield:false,shdT:0,dt:0,beamT:0,beamY:0,beamOn:false,revive:ship.id==='fenix',drones:[{x:GW/2,y:IH},{x:GW/2,y:IH}],sp:0,spT:0,swarm:0,god:0};
+  if(lv.shd)player.shield=true;
   score=0;crTotal=0;kills=0;toSpawn=0;waveDelay=0.8;boss=null;phase='wave';station=null;fixCount=0;loopN=0;stationWave=0;
   wave=startP*5;curSt=-1;wIn=5;heat=0;crystals=perm.start*60+[0,150,350,600,900,1300,1800][startP];
   chain=0;comboT=0;shake=0;time=0;bannerT=0;slowT=0;flashT=0;ets=1;warpT=0;
@@ -1202,7 +1218,7 @@ function renderShop(){
   $('shopCr').textContent=crystals;
   const ss=$('shopShip');ss.innerHTML='';const sc=sprCanvas(shipSpr,4);sc.style.display='block';sc.style.margin='0 auto';ss.appendChild(sc);
   const box=$('cards');box.innerHTML='';
-  UPG.forEach(u=>{
+  (SHIP_UP[ship.id]||[]).map(id=>UPG.find(x=>x.id===id)).filter(Boolean).forEach(u=>{
     const st=upState(u);
     const b=document.createElement('button');b.className='card'+(st==='poor'?' off':'')+(st==='max'?' max':'');
     let pips='';if(u.max){for(let i=0;i<u.max;i++)pips+=i<lv[u.id]?'■':'□';}else pips='Životy: '+player.hp+'/'+player.maxHp;
@@ -1349,6 +1365,32 @@ $('dailyTitle').appendChild(textCanvas('ÚKOLY','#5dff8a',6));
 $('lvlTitle').appendChild(textCanvas('LEVEL UP!','#41e6ff',6));
 $('cityBtn').onclick=()=>openCity();
 $('lbBtn').onclick=()=>{setState('records');renderRecords();};
+const codeKey=t=>t.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[\s.,_-]/g,'');
+function useCode(raw){
+  const c=codeKey(raw);let used=[];try{used=JSON.parse(store.get('px_codes','[]'))||[];}catch(e){}
+  if(!c)return 'Napiš nějaký kód.';
+  if(used.includes(c))return 'Tenhle kód už jsi použil.';
+  if(c==='VSECHNO'){
+    owned=SHIPS.map(x=>x.id);ownedSk=SKINS.map(x=>x.id);ownedP=BIOMES.map((_,i)=>i);
+    perm={start:5,hull:2,dmg:5,charge:3,mag:2,hunter:3,disc:3};
+    store.set('px_owned',JSON.stringify(owned));store.set('px_skins',JSON.stringify(ownedSk));store.set('px_planets',JSON.stringify(ownedP));savePerm();
+    store.set('px_all','1');
+  }else if(c==='5000'){
+    bank+=5000;store.set('px_bank',bank);
+  }else return 'Tenhle kód neznám.';
+  used.push(c);store.set('px_codes',JSON.stringify(used));
+  showBank();refreshMenu();snd(880,0.25,'square',0.06,1.6);vib(30);
+  return c==='VSECHNO'?'Odemčeno všechno! Všechny lodě, skiny, planety, trvalá vylepšení a v každé hře začínáš se všemi vylepšeními lodi.':'Připsáno 5 000 krystalů do banky!';
+}
+$('codeBtn').onclick=()=>{$('codeUI').classList.remove('hidden');$('codeIn').value='';$('codeMsg').textContent='';snd(660,0.1,'triangle',0.05);};
+$('codeBack').onclick=()=>{$('codeUI').classList.add('hidden');snd(330,0.08,'triangle',0.05);};
+$('codeGo').onclick=()=>{$('codeMsg').textContent=useCode($('codeIn').value);};
+$('codeIn').onkeydown=e=>{if(e.key==='Enter')$('codeGo').onclick();};
+$('resetBtn').onclick=()=>{
+  if(!confirm('Opravdu resetovat hru? Smažou se krystaly, lodě, planety, vylepšení, rekordy a použité kódy.'))return;
+  Object.keys(localStorage).filter(k=>k.startsWith('px_')).forEach(k=>localStorage.removeItem(k));
+  location.reload();
+};
 $('tutBtn').onclick=()=>{store.set('px_tut','0');tutDone=false;snd(660,0.1,'triangle',0.05);$('tutBtn').textContent='✔ NÁVOD ZAPNUT';};
 const musLbl=()=>{$('musBtn').textContent=$('musBtn2').textContent='♫ HUDBA: '+(musicOn?'ZAP':'VYP');};musLbl();
 $('musBtn').onclick=$('musBtn2').onclick=()=>{musicOn=!musicOn;store.set('px_mus',musicOn?'1':'0');musLbl();musMute(state==='pause');if(musicOn&&!MUS.cur)setMusic('menu');};
@@ -1367,7 +1409,7 @@ sb.onclick=()=>{soundOn=!soundOn;sndLbl();store.set('px_snd',soundOn?'1':'0');};
 function fireB(x,y,vx,vy,d,k,pierce){const b=take(bullets);if(!b)return;const sm=1+0.25*(pk.speedB||0);b.x=x;b.y=y;b.vx=vx*sm;b.vy=vy*sm;b.d=d*(1+0.2*(pk.bigshot||0));b.k=k||0;b.pierce=(pierce||0)+(b.k===2?0:(pk.pierce||0));b.last=null;}
 function playerFire(dt){
   const p=player,sup=p.spT>0,over=sup&&ship.id==='jiskra',bsup=sup&&ship.id==='blesk';
-  const dm=dmgMul()*(bsup?2:1),rm=rateMul()*(over?0.33:1),ny=p.y+shipSpr.noseY;
+  const trisup=sup&&ship.id==='trojlaser';const dm=dmgMul()*(bsup?2:1),rm=rateMul()*(over?0.33:1)*(trisup?0.5:1),ny=p.y+shipSpr.noseY;
   const w=ship.weapon;
   p.beamOn=false;
   if(w==='beam'){
@@ -1384,6 +1426,7 @@ function playerFire(dt){
       else if(w==='heavy'){p.fireT=Math.max(p.fireT,-0.05)+0.34*rm;fireB(p.x,ny,0,-250,3.2*dm,1,1);snd(160,0.06,'square',0.02,0.6);}
       else if(w==='spread'){p.fireT=Math.max(p.fireT,-0.05)+0.17*rm;for(const a of[-0.22,0,0.22])fireB(p.x,ny,Math.sin(a)*290,-Math.cos(a)*290,0.8*dm,0);}
       else if(w==='homing'){p.fireT=Math.max(p.fireT,-0.05)+0.16*rm;fireB(p.x,ny,rnd(-30,30),-240,1.05*dm,3);}
+      else if(w==='tri'){p.fireT=Math.max(p.fireT,-0.05)+0.15*rm;const L=1+0.5*lv.lsr;fireB(p.x,ny,0,-300,dm*L,0);for(const a of[-0.32,0.32])fireB(p.x,ny,Math.sin(a)*300,-Math.cos(a)*300,dm*L*0.8,0);}
       if(p.pu.triple>0){for(const a of[-0.3,0.3])fireB(p.x,ny+2,Math.sin(a)*280,-Math.cos(a)*280,0.8*dm,0);}
     }
   }
@@ -1397,6 +1440,8 @@ function playerFire(dt){
       for(let k=0;k<lv.gun;k++){const ox=5+k*2,oy=p.y+SY0+4+k-shipSpr.hh;for(const s of[-1,1])fireB(p.x+s*ox,oy-1,Math.sin(s*ang[k])*290,-Math.cos(ang[k])*290,0.7*dm,0);}
     }
   }
+  // mini kulomety na bocích Trojlaseru
+  if(ship.id==='trojlaser'){p.miT=(p.miT||0)-dt;if(p.miT<=0){p.miT=0.14*rm/(1+0.4*lv.mini);for(const s of[-1,1])fireB(p.x+s*4,ny+6,s*25,-300,0.35*dm,0);}}
   // drony
   p.dt^=1;
   if(lv.drone){p.drT=(p.drT||0)-dt;if(p.drT<=0){p.drT=0.22*rm;for(let i=0;i<lv.drone;i++){const d=p.drones[i];fireB(d.x,d.y-3,0,-280,0.8*dm,0);}}}
@@ -2968,7 +3013,7 @@ function loop(now){
 let rT=0;addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{if(state==='city'&&document.activeElement===$('cityIn'))return;const ow=IW,oh=IH;resize();if(state==='city'&&(ow!==IW||oh!==IH))cityInit();},150);});
 resize();setState('menu');requestAnimationFrame(loop);
 
-if(location.hash==='#debug')window.__dbg={spawnEnemy,spawnBoss,spawnStation,nextWave,setWave:w=>{wave=w;},setBiome,lv:()=>lv,state:()=>state,give:n=>{crystals+=n;},bank:n=>{bank+=n;},wave:()=>wave,god:()=>{player.hp=99;player.maxHp=99;},clear:()=>{toSpawn=0;},st:()=>station&&[station.x,station.y],pl:()=>[player.x,player.y,player.hp],dock:()=>{if(station){const D=dockPos();player.x=player.tx=D.x;player.y=player.ty=D.y+6;}},setShip:id=>{shipId=id;},upg:o=>{Object.assign(lv,o);shipSpr=buildShip(ship,lv);},ship:id=>{ship=shipById(id);shipSpr=buildShip(ship,lv);player.spT=0;},fillSuper:()=>{player.sp=1;},final:()=>{for(const e of enemies)e.on=false;wave=35;stationWave=35;ownedP=[0,1,2,3,4,5,6];curSt=NB-1;wIn=5;nextWave();},stg:()=>[wave,curSt,wIn,loopN,biomeIdx,heat,crTotal],die:()=>{die();},nw:()=>{for(const e of enemies)e.on=false;boss=null;nextWave();},killBoss:()=>{if(boss){boss.hp=1;hitEnemy(boss,5);}},mus:()=>MUS.cur,lvup:()=>{pendLv++;},pu:i=>applyPU(PU[i]),pk:o=>Object.assign(pk,o),treasure:()=>spawnEnemy('treasure'),event:k=>{eventK=k;eventT=0.01;},elite:k=>{const e=spawnEnemy(k);if(e){e.elite=true;e.hp=e.max*=3;}},daily:()=>DY,city:t=>runText(t),fxk:()=>C&&C.fx.map(f=>f.k+':'+Math.round(f.x)+(f.t!==undefined?'/'+f.t.toFixed(1):'')).join(' ')+' t='+C.t.toFixed(1),C:()=>C&&{deb:C.deb.length,B:C.B.length,ppl:C.ppl.length,fx:C.fx.length},tut:()=>tut&&tut.st,story:()=>!!storyQ};
+if(location.hash==='#debug')window.__dbg={openShop,spawnEnemy,spawnBoss,spawnStation,nextWave,setWave:w=>{wave=w;},setBiome,lv:()=>lv,state:()=>state,give:n=>{crystals+=n;},bank:n=>{bank+=n;},wave:()=>wave,god:()=>{player.hp=99;player.maxHp=99;},clear:()=>{toSpawn=0;},st:()=>station&&[station.x,station.y],pl:()=>[player.x,player.y,player.hp],dock:()=>{if(station){const D=dockPos();player.x=player.tx=D.x;player.y=player.ty=D.y+6;}},setShip:id=>{shipId=id;},upg:o=>{Object.assign(lv,o);shipSpr=buildShip(ship,lv);},ship:id=>{ship=shipById(id);shipSpr=buildShip(ship,lv);player.spT=0;},fillSuper:()=>{player.sp=1;},final:()=>{for(const e of enemies)e.on=false;wave=35;stationWave=35;ownedP=[0,1,2,3,4,5,6];curSt=NB-1;wIn=5;nextWave();},stg:()=>[wave,curSt,wIn,loopN,biomeIdx,heat,crTotal],die:()=>{die();},nw:()=>{for(const e of enemies)e.on=false;boss=null;nextWave();},killBoss:()=>{if(boss){boss.hp=1;hitEnemy(boss,5);}},mus:()=>MUS.cur,lvup:()=>{pendLv++;},pu:i=>applyPU(PU[i]),pk:o=>Object.assign(pk,o),treasure:()=>spawnEnemy('treasure'),event:k=>{eventK=k;eventT=0.01;},elite:k=>{const e=spawnEnemy(k);if(e){e.elite=true;e.hp=e.max*=3;}},daily:()=>DY,city:t=>runText(t),fxk:()=>C&&C.fx.map(f=>f.k+':'+Math.round(f.x)+(f.t!==undefined?'/'+f.t.toFixed(1):'')).join(' ')+' t='+C.t.toFixed(1),C:()=>C&&{deb:C.deb.length,B:C.B.length,ppl:C.ppl.length,fx:C.fx.length},tut:()=>tut&&tut.st,story:()=>!!storyQ};
 /* ================= offline režim (funguje, když je hra nahraná na webu) ================= */
 try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&window.self===window.top){navigator.serviceWorker.register('../../sw.js',{updateViaCache:'none'}).then(r=>{try{r.update();}catch(e){}}).catch(()=>{});let reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloaded||state==='play')return;reloaded=true;location.reload();});}}catch(e){}
 })();

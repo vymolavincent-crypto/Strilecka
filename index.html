@@ -59,6 +59,7 @@ button{font:inherit;cursor:pointer;border:0}
 .box .note{margin-top:12px;font-size:12px;color:#a7b2dc;line-height:1.5}
 .box button{margin-top:18px;width:100%;padding:12px;background:#5ee7ff;color:#0b0d26;font-weight:900;letter-spacing:1px;box-shadow:inset 0 -5px 0 0 #2aa9c9}
 .ic{display:inline-block;padding:0 6px;background:#2c3778;color:#fff}
+.resetHra{display:block;margin:-6px 0 16px auto;padding:6px 12px;font-family:inherit;font-weight:700;font-size:12px;background:none;border:2px solid #5a6080;color:#a7b2dc;border-radius:10px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -163,9 +164,18 @@ const karta = h => `
     <div class="info"><div class="t">${h.nazev}${h.nove ? ' <span class="new">NOVÉ</span>' : ''}</div><div class="d">${h.popis}</div><div class="r" data-r="${h.id}"></div></div>
     <div class="play">▶</div>
   </a>`;
+const resetBtn = h => h.klice ? `<button class="resetHra" data-reset="${h.id}">↺ Restartovat hru</button>` : '';
 $('list').innerHTML =
   '<h2>👥 Pro 2 hráče</h2>' + HRY.filter(h => h.hraci === 2).sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0)).map(karta).join('') +
-  '<h2>🚀 Pro 1 hráče</h2>' + HRY.filter(h => h.hraci !== 2).sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0)).map(karta).join('');
+  '<h2>🚀 Pro 1 hráče</h2>' + HRY.filter(h => h.hraci !== 2).sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0)).map(h => karta(h) + resetBtn(h)).join('');
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-reset]'); if (!b) return;
+  e.preventDefault();
+  const h = HRY.find(x => x.id === b.dataset.reset);
+  if (!h || !confirm('Restartovat hru ' + h.nazev + '? Smažou se všechny postupy v ní.')) return;
+  Object.keys(localStorage).filter(k => k.startsWith(h.klice)).forEach(k => localStorage.removeItem(k));
+  stavy(); b.textContent = '✔ Restartováno';
+});
 function stavy(){ for (const h of HRY) { const el = document.querySelector('[data-r="' + h.id + '"]'); try { el.textContent = h.stav ? h.stav() : ''; } catch (e) {} } }
 stavy(); addEventListener('pageshow', stavy);
 try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}

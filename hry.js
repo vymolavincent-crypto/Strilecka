@@ -1,7 +1,7 @@
 // ===== SEZNAM HER V HERNĚ =====
 // Novou hru přidáš tak, že ji dáš do složky hry/<nazev>/ a připíšeš ji sem.
 // Po každé změně zvyš VERZE o 1, aby si telefon stáhl novinky.
-self.HERNA_VERZE = 14;
+self.HERNA_VERZE = 15;
 self.HERNA_HRY = [
   {
     id: 'neon-najezd',
@@ -12,6 +12,7 @@ self.HERNA_HRY = [
     barva: '#7c6cff',
     soubory: ['hry/neon-najezd/', 'hry/neon-najezd/index.html', 'hry/neon-najezd/icon-192.png', 'hry/neon-najezd/icon-512.png'],
     uklada: true,
+    klice: 'px_',
     stav: () => {
       const b = +localStorage.getItem('px_best') || 0, w = +localStorage.getItem('px_bwave') || 0;
       return b ? '🏆 Rekord ' + b.toLocaleString('cs-CZ') + (w ? ' · vlna ' + w : '') : '';
@@ -24,6 +25,7 @@ self.HERNA_HRY = [
     popis: 'Kupuj lidi, kteří v parku hází odpadky. Sbírej je, vydělávej a kupuj popelářská auta.',
     hraci: 1,
     uklada: true,
+    klice: 'park_',
     ikona: 'hry/park/ikona.png',
     barva: '#7dffa8',
     soubory: ['hry/park/', 'hry/park/index.html', 'hry/park/ikona.png'],
