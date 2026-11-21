@@ -128,17 +128,17 @@ for (const k in TRASH) trashImg[k] = mk(TRASH[k].rows);
 
 // ============ TYPY LIDÍ ============
 const TYPES = [
-  { id:'turista', nazev:'Turista', popis:'Hází papírky, plechovky a noviny.', cena:5, int:3, items:['papir', 'plechovka', 'kelimek', 'noviny'], hod:0.5, shirt:'#4d96ff', hair:'#5a3818', kind:'walk' },
-  { id:'dite', nazev:'Dítě s balónkem', popis:'Hází papírky od bonbonů a lepí žvýkačky.', cena:35, int:3.5, items:['bonbon', 'zvykacka', 'papir'], hod:1.5, shirt:'#ffd84a', hair:'#c99a1a', kind:'kid' },
-  { id:'pes', nazev:'Pejsek', popis:'Dělá bobky na trávník. Fuj, ale vyplatí se!', cena:150, int:6, items:['bobek'], hod:4, kind:'dog' },
-  { id:'cyklista', nazev:'Cyklista', popis:'Sviští po cestě a odhazuje lahve od pití.', cena:600, int:4, items:['pitko', 'energak'], hod:9, shirt:'#3fbf5a', hair:'#1a1a2a', kind:'bike' },
-  { id:'svacinar', nazev:'Svačinář', popis:'Nechává po sobě banány, jablka a krabice od pizzy.', cena:1800, int:5, items:['banan', 'jablko', 'pizza', 'sacek'], hod:20, shirt:'#ff9a3d', hair:'#1a1a2a', kind:'walk' },
-  { id:'babicka', nazev:'Babička s holuby', popis:'Krmí holuby na lavičce a holubi všude kadí.', cena:5000, int:4, items:['trus', 'trus', 'sacek'], hod:40, shirt:'#a86ad0', hair:'#e8e2d0', kind:'granny' },
-  { id:'maminka', nazev:'Maminka s kočárkem', popis:'Hází použité plenky. Smrdí, ale jsou cenné!', cena:12000, int:7, items:['plenka'], hod:90, shirt:'#ff9ad8', hair:'#c99a1a', kind:'pram' },
-  { id:'skejtak', nazev:'Skejťák', popis:'Jezdí na skejtu, pije energiťáky a plive žvýkačky.', cena:30000, int:3, items:['energak', 'zvykacka', 'plechovka'], hod:160, shirt:'#ff5c5c', hair:'#1a1a2a', kind:'skate' },
-  { id:'party', nazev:'Párty parta', popis:'Hází lahve, kelímky a plechovky. Hodně!', cena:75000, int:3, items:['lahev', 'kelimek', 'plechovka'], hod:300, shirt:'#c58bff', hair:'#ff5c5c', kind:'party' },
-  { id:'ufo', nazev:'Mimozemšťan', popis:'Létá nad parkem a shazuje vesmírný šrot.', cena:400000, int:6, items:['sroub', 'krystal'], hod:2200, kind:'ufo' },
-  { id:'robot', nazev:'Robot', popis:'Chodí po trávě a ztrácí baterky a šroubky.', cena:2000000, int:5, items:['baterie', 'sroub'], hod:9000, kind:'robot' },
+  { id:'turista', nazev:'Turista', popis:'Hází papírky, plechovky a noviny.', cena:5, int:6, items:['papir', 'plechovka', 'kelimek', 'noviny'], hod:0.5, shirt:'#4d96ff', hair:'#5a3818', kind:'walk' },
+  { id:'dite', nazev:'Dítě s balónkem', popis:'Hází papírky od bonbonů a lepí žvýkačky.', cena:35, int:7, items:['bonbon', 'zvykacka', 'papir'], hod:1.5, shirt:'#ffd84a', hair:'#c99a1a', kind:'kid' },
+  { id:'pes', nazev:'Pejsek', popis:'Dělá bobky na trávník. Fuj, ale vyplatí se!', cena:150, int:12, items:['bobek'], hod:4, kind:'dog' },
+  { id:'cyklista', nazev:'Cyklista', popis:'Sviští po cestě a odhazuje lahve od pití.', cena:600, int:8, items:['pitko', 'energak'], hod:9, shirt:'#3fbf5a', hair:'#1a1a2a', kind:'bike' },
+  { id:'svacinar', nazev:'Svačinář', popis:'Nechává po sobě banány, jablka a krabice od pizzy.', cena:1800, int:10, items:['banan', 'jablko', 'pizza', 'sacek'], hod:20, shirt:'#ff9a3d', hair:'#1a1a2a', kind:'walk' },
+  { id:'babicka', nazev:'Babička s holuby', popis:'Krmí holuby na lavičce a holubi všude kadí.', cena:5000, int:8, items:['trus', 'trus', 'sacek'], hod:40, shirt:'#a86ad0', hair:'#e8e2d0', kind:'granny' },
+  { id:'maminka', nazev:'Maminka s kočárkem', popis:'Hází použité plenky. Smrdí, ale jsou cenné!', cena:12000, int:14, items:['plenka'], hod:90, shirt:'#ff9ad8', hair:'#c99a1a', kind:'pram' },
+  { id:'skejtak', nazev:'Skejťák', popis:'Jezdí na skejtu, pije energiťáky a plive žvýkačky.', cena:30000, int:6, items:['energak', 'zvykacka', 'plechovka'], hod:160, shirt:'#ff5c5c', hair:'#1a1a2a', kind:'skate' },
+  { id:'party', nazev:'Párty parta', popis:'Hází lahve, kelímky a plechovky. Hodně!', cena:75000, int:6, items:['lahev', 'kelimek', 'plechovka'], hod:300, shirt:'#c58bff', hair:'#ff5c5c', kind:'party' },
+  { id:'ufo', nazev:'Mimozemšťan', popis:'Létá nad parkem a shazuje vesmírný šrot.', cena:400000, int:12, items:['sroub', 'krystal'], hod:2200, kind:'ufo' },
+  { id:'robot', nazev:'Robot', popis:'Chodí po trávě a ztrácí baterky a šroubky.', cena:2000000, int:10, items:['baterie', 'sroub'], hod:9000, kind:'robot' },
 ];
 
 // ============ ULOŽENÁ HRA ============
