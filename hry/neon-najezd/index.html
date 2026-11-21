@@ -1409,7 +1409,6 @@ function playerFire(dt){
   const trisup=sup&&ship.id==='trojlaser';const dm=dmgMul()*(bsup?2:1),rm=rateMul()*(over?0.33:1)*(trisup?0.5:1),ny=p.y+shipSpr.noseY;
   const w=ship.weapon;
   p.beamOn=false;
-  if(p.lasers)p.lasers=p.lasers.filter(l=>(l.t-=dt)>0);
   if(w==='beam'){
     p.beamOn=true;
     const half=1+Math.min(2,lv.dmg>>1)+(bsup?2:0);
@@ -1431,7 +1430,7 @@ function playerFire(dt){
           let x1,y1;
           if(tg){x1=p.x+tn*(ny-tg.y);y1=tg.y;hitEnemy(tg,dm*L);if(Math.random()<0.5)burst(x1,y1,1,'violet',40,1);}
           else{y1=-2;x1=p.x+tn*(ny+2);}
-          p.lasers.push({x0:p.x,y0:ny,x1,y1,t:0.16});
+          p.lasers.push({tn,y1,t:0.16});
         }
       }
       if(p.pu.triple>0){for(const a of[-0.3,0.3])fireB(p.x,ny+2,Math.sin(a)*280,-Math.cos(a)*280,0.8*dm,0);}
@@ -1561,7 +1560,8 @@ function update(dt){
     if(pendLv>0&&state==='play'&&phase!=='station')openLevelUp();
     const wantS=p.sp>=1&&p.spT<=0;if(wantS!==superShown){superShown=wantS;$('superBtn').classList.toggle('hidden',!wantS);if(wantS){snd(990,0.2,'square',0.05,1.5);vib(20);}}
     if(biomeIdx===6||(boss&&boss.on&&boss.key==='bVoid')){const g=(GW/2-p.tx)*(boss&&boss.key==='bVoid'?0.7:0.35)*dt;p.tx+=g;psx+=g;}
-    if(phase!=='station')playerFire(dt);else p.beamOn=false;
+    if(p.lasers)p.lasers=p.lasers.filter(l=>(l.t-=dt)>0);
+    if(phase!=='station')playerFire(dt);else{p.beamOn=false;p.lasers=[];}
     if(phase==='wave'){
       if(toSpawn>0){
         spawnT-=dt;
@@ -1866,8 +1866,8 @@ function draw(){
       const x=Math.round(p.x),y0=Math.round(p.y+shipSpr.noseY),y1=Math.max(0,Math.round(p.beamY)),hw=1+Math.min(2,lv.dmg>>1);
       if(y0>y1){ctx.fillStyle='#5a3aa8';ctx.fillRect(x-hw-1,y1,hw*2+3,y0-y1);ctx.fillStyle='#b07bff';ctx.fillRect(x-hw,y1,hw*2+1,y0-y1);ctx.fillStyle=Math.floor(time*20)%2?'#fff':'#ffe14d';ctx.fillRect(x,y1,1,y0-y1);}
     }
-    for(const l of p.lasers||[]){const a=Math.min(1,l.t/0.16);ctx.save();ctx.lineCap='round';
-      ctx.globalAlpha=0.85*a;ctx.strokeStyle='#ff3b6b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(Math.round(l.x0),Math.round(l.y0));ctx.lineTo(Math.round(l.x1),Math.round(l.y1));ctx.stroke();
+    for(const l of state==='play'?p.lasers||[]:[]){const a=Math.min(1,l.t/0.16),x0=p.x,y0=p.y+shipSpr.noseY,x1=x0+l.tn*(y0-l.y1);ctx.save();ctx.lineCap='round';
+      ctx.globalAlpha=0.85*a;ctx.strokeStyle='#ff3b6b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(Math.round(x0),Math.round(y0));ctx.lineTo(Math.round(x1),Math.round(l.y1));ctx.stroke();
       ctx.globalAlpha=a;ctx.strokeStyle='#ffe9f0';ctx.lineWidth=1.6;ctx.stroke();ctx.restore();}
     const blink=p.inv>0&&state==='play'&&Math.floor(p.inv*14)%2===0;
     if(!blink){
