@@ -1,7 +1,7 @@
 // Offline režim: při prvním otevření se do telefonu uloží menu i VŠECHNY hry.
 // Hry se pak spouští vždy hned z telefonu (i ve vlaku, bez signálu nebo na vlakové Wi-Fi),
 // a když je internet, nová verze se potichu stáhne na pozadí.
-// VERZE 7 – při každé nové verzi zvyš toto číslo i HERNA_VERZE v hry.js
+// VERZE 8 – při každé nové verzi zvyš toto číslo i HERNA_VERZE v hry.js
 importScripts('hry.js');
 const CACHE = 'herna-v' + self.HERNA_VERZE;
 const ZAKLAD = ['./', './index.html', './hry.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];

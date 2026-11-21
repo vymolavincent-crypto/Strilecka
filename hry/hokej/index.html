@@ -4,47 +4,50 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#eaf5ff">
+<meta name="theme-color" content="#0b0d26">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Vesmírná střílečka">
 <link rel="manifest" href="../../manifest.webmanifest">
-<link rel="icon" href="ikona.svg">
+<link rel="icon" href="ikona.png">
 <title>Vzdušný hokej</title>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;background:#eaf5ff;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;
-  font-family:ui-rounded,"SF Pro Rounded","Nunito",system-ui,-apple-system,sans-serif;color:#3a3350}
-canvas{position:fixed;left:0;top:0;display:block}
-.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:rgba(234,245,255,.82);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);z-index:3;text-align:center}
+html,body{margin:0;height:100%;overflow:hidden;background:#0b0d26;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;
+  font-family:ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,"Courier New",monospace;color:#dfe6ff}
+canvas{position:fixed;left:0;top:0;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+.overlay{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:rgba(8,9,30,.84);z-index:3;text-align:center}
 .hidden{display:none!important}
-h1{margin:0;font-size:34px;font-weight:800;color:#2f2843}
-p{margin:0;color:#6d6688;font-size:15px;line-height:1.45;max-width:320px}
+h1{margin:0;font-size:28px;letter-spacing:2px;color:#5ee7ff;text-shadow:3px 3px 0 #05061a;text-transform:uppercase}
+p{margin:0;color:#a7b2dc;font-size:13px;line-height:1.55;max-width:320px}
 button{font:inherit;cursor:pointer;border:0}
-.btn{width:260px;padding:15px;border-radius:18px;font-size:18px;font-weight:800;color:#fff;background:#ff6b6b;box-shadow:0 8px 18px -10px #ff6b6b}
-.btn.b{background:#4d96ff;box-shadow:0 8px 18px -10px #4d96ff}
-.btn.g{background:#fff;color:#5b5275;box-shadow:0 6px 16px -10px rgba(60,40,100,.5)}
-.diff{display:flex;gap:6px;background:#fff;padding:5px;border-radius:14px}
-.diff button{padding:8px 12px;border-radius:10px;background:transparent;color:#7d7594;font-weight:700;font-size:14px}
-.diff button.on{background:#4d96ff;color:#fff}
-#homeBtn,#pauseBtn{position:fixed;z-index:2;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.9);color:#5b5275;font-size:18px;font-weight:800;box-shadow:0 4px 12px -6px rgba(60,40,100,.5);left:10px;top:50%;margin-top:-21px}
+.btn{--k:#ff6b6b;width:250px;padding:13px;font-size:15px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#0b0d26;background:var(--k);margin:4px;
+  box-shadow:0 -4px 0 0 var(--k),0 4px 0 0 var(--k),-4px 0 0 0 var(--k),4px 0 0 0 var(--k),inset 0 -5px 0 0 rgba(0,0,0,.28)}
+.btn:active{transform:translate(2px,2px)}
+.btn.b{--k:#4d96ff}.btn.g{--k:#2c3778;color:#dfe6ff}
+.diff{display:flex;gap:6px}
+.diff button{padding:7px 10px;background:#151a44;color:#8fa0d8;font-weight:800;font-size:12px;box-shadow:0 0 0 3px #2c3778}
+.diff button.on{background:#ffd166;color:#0b0d26;box-shadow:0 0 0 3px #ffd166}
+.half{position:absolute;left:0;right:0;height:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.half.top{top:0;transform:rotate(180deg)}.half.bot{bottom:0}
+.big{font-size:30px;font-weight:900;letter-spacing:2px;text-shadow:3px 3px 0 #05061a}
+#homeBtn,#pauseBtn{position:fixed;z-index:2;width:38px;height:38px;background:#151a44;color:#dfe6ff;font-size:16px;font-weight:900;box-shadow:0 0 0 3px #2c3778;left:10px;top:50%;margin-top:-19px}
 #pauseBtn{left:auto;right:10px}
-.win{font-size:30px;font-weight:800}
-.flip{transform:rotate(180deg)}
 </style>
+
 </head>
 <body>
 <div id="sa" style="position:fixed;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)"></div>
 <canvas id="c"></canvas>
-<button id="homeBtn" aria-label="Herna">⌂</button>
+<button id="homeBtn" aria-label="Menu">⌂</button>
 <button id="pauseBtn" aria-label="Pauza">II</button>
 
 <div class="overlay" id="menu">
-  <h1>🏒 Vzdušný hokej</h1>
-  <p>Každý hráč drží svou polovinu telefonu a prstem posouvá svou pálku. Kdo dá první <b>7 gólů</b>, vyhrává.</p>
+  <h1>Vzdušný hokej</h1>
+  <p>Hokej na vesmírné stanici! Každý hráč drží svou polovinu telefonu a prstem posouvá svou pálku. Kdo dá první <b>7 gólů</b>, vyhrává.</p>
   <button class="btn" id="p2Btn">👥 Dva hráči</button>
   <button class="btn b" id="aiBtn">🤖 Proti počítači</button>
-  <div class="diff" id="diff"><button data-d="0">Lehký</button><button data-d="1" class="on">Střední</button><button data-d="2">Těžký</button></div>
-  <button class="btn g" id="backBtn">⌂ Zpět do Herny</button>
+  <div class="diff" id="diff"><button data-d="0">LEHKÝ</button><button data-d="1" class="on">STŘEDNÍ</button><button data-d="2">TĚŽKÝ</button></div>
+  <button class="btn g" id="backBtn">⌂ Zpět do menu</button>
 </div>
 
 <div class="overlay hidden" id="pause">
@@ -53,13 +56,10 @@ button{font:inherit;cursor:pointer;border:0}
   <button class="btn g" id="quitBtn">Konec hry</button>
 </div>
 
-<div class="overlay hidden" id="end">
-  <div class="win flip" id="endTop"></div>
-  <div style="height:30px"></div>
-  <div class="win" id="endBot"></div>
-  <p id="endScore"></p>
-  <button class="btn" id="againBtn">↻ Hrát znovu</button>
-  <button class="btn g" id="menuBtn">Menu</button>
+<div class="overlay hidden" id="end" style="padding:0">
+  <div class="half top"><div class="big" id="endTop"></div><div id="serTop" style="font-size:13px;color:#a7b2dc"></div></div>
+  <div class="half bot"><div class="big" id="endBot"></div><div id="endScore" style="font-size:13px;color:#a7b2dc"></div>
+    <button class="btn" id="againBtn">↻ Odveta</button><button class="btn g" id="menuBtn">Menu</button></div>
 </div>
 
 <script>
@@ -76,7 +76,7 @@ function resize(){
   DPR = Math.min(2, devicePixelRatio || 1);
   W = innerWidth; H = innerHeight;
   cv.width = W * DPR; cv.height = H * DPR; cv.style.width = W + 'px'; cv.style.height = H + 'px';
-  cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  cx.setTransform(DPR, 0, 0, DPR, 0, 0); LH = 0;
   const cs = getComputedStyle($('sa')), m = 10;
   const st = m + (parseFloat(cs.paddingTop) || 0), sb = m + (parseFloat(cs.paddingBottom) || 0);
   field = { x: m, y: st, w: W - 2 * m, h: H - st - sb };
@@ -137,7 +137,7 @@ function beep(f, d, v = 0.15, type = 'sine'){
   o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d);
 }
 let lastHit = 0;
-function hitSound(sp){ const now = performance.now(); if (now - lastHit < 60) return; lastHit = now; beep(520 + Math.min(500, sp * 0.4), 0.06, Math.min(0.2, 0.05 + sp / 5000), 'triangle'); }
+function hitSound(sp){ if (puck) spark(puck.x, puck.y, Math.min(12, 3 + sp / 120 | 0)); const now = performance.now(); if (now - lastHit < 60) return; lastHit = now; beep(520 + Math.min(500, sp * 0.4), 0.06, Math.min(0.2, 0.05 + sp / 5000), 'triangle'); }
 
 // ---------- počítač ----------
 const AI = [ { sp: 520, react: 0.55 }, { sp: 850, react: 0.8 }, { sp: 1250, react: 1 } ];
@@ -200,7 +200,7 @@ function stepPuck(dt){
 }
 function goal(who){
   score[who]++;
-  goalSide = who; goalFlash = 1;
+  goalSide = who; goalFlash = 1; spark(puck.x, Math.max(field.y, Math.min(field.y + field.h, puck.y)), 30, who === 0 ? '#ff6b6b' : '#4d96ff'); shakeT = 0.35;
   beep(660, 0.12, 0.2); setTimeout(() => beep(880, 0.2, 0.2), 110);
   try { navigator.vibrate && navigator.vibrate(120); } catch (_) {}
   if (score[who] >= GOALS_TO_WIN) { endGame(who); return; }
@@ -209,59 +209,118 @@ function goal(who){
 }
 function endGame(who){
   mode = 'end';
-  const w = 'Vyhrál jsi! 🎉', l = 'Prohra 😅';
+  const w = 'VÝHRA! 🏆', l = 'PROHRA 😵';
   if (vsAI) { $('endBot').textContent = who === 0 ? w : 'Počítač vyhrál 🤖'; $('endTop').textContent = ''; }
   else { $('endBot').textContent = who === 0 ? w : l; $('endTop').textContent = who === 1 ? w : l; }
-  $('endBot').style.color = '#ff6b6b'; $('endTop').style.color = '#4d96ff';
+  $('endBot').style.color = who === 0 ? '#ffd166' : '#ff6b6b'; $('endTop').style.color = who === 1 ? '#ffd166' : '#ff6b6b';
   $('endScore').textContent = 'Skóre ' + score[0] + ' : ' + score[1];
+  $('serTop').textContent = vsAI ? '' : 'Skóre ' + score[1] + ' : ' + score[0];
   $('end').classList.remove('hidden');
   beep(523, 0.15, 0.2); setTimeout(() => beep(659, 0.15, 0.2), 150); setTimeout(() => beep(784, 0.3, 0.2), 300);
 }
 
 // ---------- kreslení ----------
-function roundRect(x, y, w, h, r){ cx.beginPath(); cx.moveTo(x + r, y); cx.arcTo(x + w, y, x + w, y + h, r); cx.arcTo(x + w, y + h, x, y + h, r); cx.arcTo(x, y + h, x, y, r); cx.arcTo(x, y, x + w, y, r); cx.closePath(); }
+// ---------- pixelové kreslení ----------
+const off = document.createElement('canvas'), o = off.getContext('2d');
+const LW = 112;
+let LH = 0, P = 1, stars = [], parts = [], trail = [], shakeT = 0;
+const MINI = { '0':["111","101","101","101","111"],'1':["010","110","010","010","111"],'2':["111","001","111","100","111"],'3':["111","001","111","001","111"],
+  '4':["101","101","111","001","001"],'5':["111","100","111","001","111"],'6':["111","100","111","101","111"],'7':["111","001","010","010","010"],
+  '8':["111","101","111","101","111"],'9':["111","101","111","001","111"] };
+const WORD = { G:["01111","10000","10011","10001","01111"], O:["01110","10001","10001","10001","01110"], L:["10000","10000","10000","10000","11111"], '!':["1","1","1","0","1"] };
+function pixSetup(){
+  P = W / LW; LH = Math.round(H / P); off.width = LW; off.height = LH;
+  stars = Array.from({ length: 60 }, () => ({ x: Math.random() * LW, y: Math.random() * LH, c: Math.random() < .2 ? '#ffffff' : Math.random() < .5 ? '#5f6cb8' : '#353f80', t: Math.random() * 7 }));
+}
+function spark(x, y, n, col){
+  for (let k = 0; k < n; k++) { const a = Math.random() * 6.283, v = 20 + Math.random() * 50; parts.push({ x: x / P, y: y / P, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0.25 + Math.random() * 0.3, c: col || (Math.random() < .5 ? '#ffffff' : '#5ee7ff') }); }
+}
+function disc(cx0, cy0, r, col){ const R = Math.round(r); for (let y = -R; y <= R; y++) { const w = Math.floor(Math.sqrt(Math.max(0, r * r - y * y))); o.fillStyle = col; o.fillRect(Math.round(cx0) - w, Math.round(cy0) + y, w * 2 + 1, 1); } }
+function ring(cx0, cy0, r, col){ o.fillStyle = col; const n = Math.max(16, Math.round(r * 7)); for (let k = 0; k < n; k++) { const a = k / n * 6.283; o.fillRect(Math.round(cx0 + Math.cos(a) * r), Math.round(cy0 + Math.sin(a) * r), 1, 1); } }
+function digits(str, x, y, sc, col, flip){
+  o.fillStyle = col; let cx0 = x;
+  for (const ch of str) { const g = MINI[ch]; for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++) if (g[r][c] === '1') {
+    const rr = flip ? 4 - r : r, cc = flip ? 2 - c : c; o.fillRect(cx0 + cc * sc, y + rr * sc, sc, sc); }
+    cx0 += (flip ? -4 : 4) * sc; }
+}
+function word(str, x, y, sc, col, flip){
+  const glyphs = [...str].map(ch => WORD[ch]); const w = glyphs.reduce((a, g) => a + g[0].length + 1, -1) * sc;
+  let cx0 = flip ? x + w / 2 : x - w / 2;
+  for (const g of glyphs) {
+    const gw = g[0].length;
+    for (let r = 0; r < 5; r++) for (let c = 0; c < gw; c++) if (g[r][c] === '1') {
+      const rr = flip ? 4 - r : r, px = flip ? cx0 - (c + 1) * sc : cx0 + c * sc;
+      o.fillStyle = '#05061a'; o.fillRect(px + sc / 2 * (flip ? -1 : 1), y + rr * sc + sc / 2 * (flip ? -1 : 1), sc, sc);
+      o.fillStyle = col; o.fillRect(px, y + rr * sc, sc, sc);
+    }
+    cx0 += (flip ? -1 : 1) * (gw + 1) * sc;
+  }
+}
 function draw(){
-  cx.fillStyle = '#eaf5ff'; cx.fillRect(0, 0, W, H);
-  const f = field;
-  roundRect(f.x, f.y, f.w, f.h, f.r); cx.fillStyle = '#ffffff'; cx.fill();
-  cx.lineWidth = 4; cx.strokeStyle = '#bcdcff'; cx.stroke();
+  if (!LH) pixSetup();
+  const t = performance.now() / 1000, dt = 1 / 60;
+  for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 0.9; q.vy *= 0.9; q.t -= dt; }
+  parts = parts.filter(q => q.t > 0);
+  o.fillStyle = '#0b0d26'; o.fillRect(0, 0, LW, LH);
+  for (const s of stars) { o.fillStyle = (s.c === '#ffffff' && Math.sin(t * 2 + s.t) > .7) ? '#9fe8ff' : s.c; o.fillRect(s.x | 0, s.y | 0, 1, 1); }
+  const fx = Math.round(field.x / P), fy = Math.round(field.y / P), fw = Math.round(field.w / P), fh = Math.round(field.h / P);
+  const cxm = fx + fw / 2, cym = fy + fh / 2;
+  // stůl: rám s ořezanými rohy
+  o.fillStyle = '#5ee7ff'; o.fillRect(fx + 2, fy, fw - 4, fh); o.fillRect(fx, fy + 2, fw, fh - 4); o.fillRect(fx + 1, fy + 1, fw - 2, fh - 2);
+  o.fillStyle = '#2c3778'; o.fillRect(fx + 2, fy + 1, fw - 4, fh - 2); o.fillRect(fx + 1, fy + 2, fw - 2, fh - 4);
+  o.fillStyle = '#111640'; o.fillRect(fx + 3, fy + 2, fw - 6, fh - 4); o.fillRect(fx + 2, fy + 3, fw - 4, fh - 6);
+  // mřížka
+  o.fillStyle = '#171d4f';
+  for (let x = fx + 8; x < fx + fw - 3; x += 8) o.fillRect(x, fy + 3, 1, fh - 6);
+  for (let y = fy + 8; y < fy + fh - 3; y += 8) o.fillRect(fx + 3, y, fw - 6, 1);
   // čáry
-  const cy = f.y + f.h / 2, cxm = f.x + f.w / 2;
-  cx.strokeStyle = '#ffc2d1'; cx.lineWidth = 3;
-  cx.beginPath(); cx.moveTo(f.x, cy); cx.lineTo(f.x + f.w, cy); cx.stroke();
-  cx.beginPath(); cx.arc(cxm, cy, f.w * 0.16, 0, Math.PI * 2); cx.stroke();
-  cx.strokeStyle = '#d6e9ff';
-  cx.beginPath(); cx.arc(cxm, f.y, f.goal * 0.6, 0, Math.PI); cx.stroke();
-  cx.beginPath(); cx.arc(cxm, f.y + f.h, f.goal * 0.6, Math.PI, 0); cx.stroke();
-  // skóre (horní hráč ho vidí otočené)
-  cx.textAlign = 'center'; cx.textBaseline = 'middle';
-  cx.font = '800 ' + Math.round(f.w * 0.22) + 'px ui-rounded,system-ui,sans-serif';
-  cx.fillStyle = 'rgba(255,107,107,.18)'; cx.fillText(score[0], cxm, cy + f.h * 0.18);
-  cx.save(); cx.translate(cxm, cy - f.h * 0.18); cx.rotate(Math.PI); cx.fillStyle = 'rgba(77,150,255,.18)'; cx.fillText(score[1], 0, 0); cx.restore();
+  for (let x = fx + 3; x < fx + fw - 3; x += 4) { o.fillStyle = '#ff6bd6'; o.fillRect(x, Math.round(cym), 2, 1); }
+  ring(cxm, cym, fw * 0.17, '#ff6bd6'); disc(cxm, cym, 1.5, '#ff6bd6');
+  const gw = Math.round(field.goal / P);
+  ring(cxm, fy, gw * 0.55, '#3a4a9a'); ring(cxm, fy + fh, gw * 0.55, '#3a4a9a');
+  // skóre
+  const sc = Math.max(3, Math.round(fw / 22));
+  digits(String(score[0]), Math.round(cxm - (String(score[0]).length * 4 - 1) * sc / 2), Math.round(cym + fh * 0.16), sc, '#3a1f3f');
+  digits(String(score[1]), Math.round(cxm + (String(score[1]).length * 4 - 1) * sc / 2 - 3 * sc), Math.round(cym - fh * 0.16 - 5 * sc), sc, '#1d2a5c', true);
   // branky
-  const gx = f.x + (f.w - f.goal) / 2;
-  cx.fillStyle = '#4d96ff'; roundRect(gx, f.y - 4, f.goal, 9, 4); cx.fill();
-  cx.fillStyle = '#ff6b6b'; roundRect(gx, f.y + f.h - 5, f.goal, 9, 4); cx.fill();
-  // záblesk gólu
+  const gx = Math.round(cxm - gw / 2), glow = (t * 6 | 0) % 2;
+  o.fillStyle = '#05061a'; o.fillRect(gx, fy - 1, gw, 4); o.fillRect(gx, fy + fh - 3, gw, 4);
+  o.fillStyle = glow ? '#4d96ff' : '#2a5fc0'; o.fillRect(gx, fy - 1, gw, 2);
+  o.fillStyle = glow ? '#ff6b6b' : '#c23b4a'; o.fillRect(gx, fy + fh - 1, gw, 2);
+  o.fillStyle = '#ffd166'; o.fillRect(gx - 1, fy - 1, 1, 3); o.fillRect(gx + gw, fy - 1, 1, 3); o.fillRect(gx - 1, fy + fh - 2, 1, 3); o.fillRect(gx + gw, fy + fh - 2, 1, 3);
   if (goalFlash > 0) {
-    cx.fillStyle = (goalSide === 0 ? 'rgba(255,107,107,' : 'rgba(77,150,255,') + (goalFlash * 0.25) + ')';
-    roundRect(f.x, f.y, f.w, f.h, f.r); cx.fill();
-    cx.font = '800 ' + Math.round(f.w * 0.13) + 'px ui-rounded,system-ui,sans-serif';
-    cx.fillStyle = 'rgba(58,51,80,' + Math.min(1, goalFlash * 1.5) + ')';
-    cx.fillText('GÓÓÓL!', cxm, cy + (goalSide === 0 ? f.h * 0.3 : 0) - (goalSide === 1 ? f.h * 0.3 : 0));
+    if ((goalFlash * 10 | 0) % 2) { o.globalAlpha = 0.25; o.fillStyle = goalSide === 0 ? '#ff6b6b' : '#4d96ff'; o.fillRect(fx, fy, fw, fh); o.globalAlpha = 1; }
+    const wsc = Math.max(3, Math.round(fw / 26)), col = goalSide === 0 ? '#ff6b6b' : '#4d96ff';
+    word('GOL!', cxm, Math.round(cym + fh * 0.22), wsc, col, false);
+    word('GOL!', cxm, Math.round(cym - fh * 0.22 - 5 * wsc), wsc, col, true);
   }
-  if (!puck) return;
-  // puk
-  cx.fillStyle = 'rgba(60,40,100,.12)'; cx.beginPath(); cx.arc(puck.x + 3, puck.y + 4, puck.r, 0, 7); cx.fill();
-  cx.fillStyle = '#3a3350'; cx.beginPath(); cx.arc(puck.x, puck.y, puck.r, 0, 7); cx.fill();
-  cx.strokeStyle = '#5e5578'; cx.lineWidth = 2; cx.beginPath(); cx.arc(puck.x, puck.y, puck.r * 0.6, 0, 7); cx.stroke();
-  // pálky
-  for (const m of mallets) {
-    cx.fillStyle = 'rgba(60,40,100,.14)'; cx.beginPath(); cx.arc(m.x + 3, m.y + 5, m.r, 0, 7); cx.fill();
-    cx.fillStyle = m.col; cx.beginPath(); cx.arc(m.x, m.y, m.r, 0, 7); cx.fill();
-    cx.fillStyle = m.dark; cx.beginPath(); cx.arc(m.x, m.y, m.r * 0.5, 0, 7); cx.fill();
-    cx.fillStyle = 'rgba(255,255,255,.45)'; cx.beginPath(); cx.arc(m.x - m.r * 0.3, m.y - m.r * 0.35, m.r * 0.22, 0, 7); cx.fill();
+  if (puck) {
+    // stopa puku
+    trail.push([puck.x / P, puck.y / P]); if (trail.length > 6) trail.shift();
+    const sp = Math.hypot(puck.vx, puck.vy);
+    if (sp > 250) trail.forEach(([x, y], k) => { o.globalAlpha = (k + 1) / 14; disc(x, y, puck.r / P * 0.8, '#5ee7ff'); });
+    o.globalAlpha = 1;
+    const pr = puck.r / P, px = puck.x / P, py = puck.y / P;
+    disc(px + 1, py + 1, pr, '#05061a');
+    disc(px, py, pr, '#dfe6ff'); disc(px, py, pr * 0.62, '#8fa0d8'); disc(px, py, pr * 0.3, '#dfe6ff');
+    o.fillStyle = '#ffffff'; o.fillRect(Math.round(px - pr * 0.5), Math.round(py - pr * 0.6), 1, 1);
+    // pálky
+    const C = [['#ff6b6b', '#c23b4a', '#ffa3a3', '#ffd166'], ['#4d96ff', '#2a5fc0', '#9cc4ff', '#7dffa8']];
+    mallets.forEach((m, i) => {
+      const r = m.r / P, x = m.x / P, y = m.y / P, c = C[i];
+      disc(x + 1, y + 2, r, '#05061a');
+      disc(x, y, r, c[1]); disc(x, y - 0.5, r - 1, c[0]); disc(x, y, r * 0.55, c[1]); disc(x, y - 0.5, r * 0.4, c[2]);
+      o.fillStyle = '#ffffff'; o.fillRect(Math.round(x - r * 0.55), Math.round(y - r * 0.55), 2, 1);
+      ring(x, y, r + 1.5, (t * 4 | 0) % 2 ? c[3] : 'rgba(0,0,0,0)');
+    });
   }
+  for (const q of parts) { o.fillStyle = q.c; o.fillRect(q.x | 0, q.y | 0, 1, 1); }
+  // na obrazovku
+  shakeT = Math.max(0, shakeT - dt);
+  const sx = shakeT ? (Math.random() - .5) * 8 * shakeT * P : 0, sy = shakeT ? (Math.random() - .5) * 8 * shakeT * P : 0;
+  cx.setTransform(1, 0, 0, 1, 0, 0); cx.imageSmoothingEnabled = false;
+  cx.fillStyle = '#0b0d26'; cx.fillRect(0, 0, cv.width, cv.height);
+  cx.drawImage(off, sx * DPR, sy * DPR, cv.width, LH * P * DPR);
 }
 
 // ---------- smyčka ----------
