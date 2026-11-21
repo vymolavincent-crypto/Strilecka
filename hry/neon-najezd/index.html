@@ -1412,6 +1412,7 @@ function playerFire(dt){
   const trisup=sup&&ship.id==='trojlaser';const dm=dmgMul()*(bsup?2:1),rm=rateMul()*(over?0.33:1)*(trisup?0.5:1),ny=p.y+shipSpr.noseY;
   const w=ship.weapon;
   p.beamOn=false;
+  if(p.lasers)p.lasers=p.lasers.filter(l=>(l.t-=dt)>0);
   if(w==='beam'){
     p.beamOn=true;
     const half=1+Math.min(2,lv.dmg>>1)+(bsup?2:0);
@@ -1426,7 +1427,16 @@ function playerFire(dt){
       else if(w==='heavy'){p.fireT=Math.max(p.fireT,-0.05)+0.34*rm;fireB(p.x,ny,0,-250,3.2*dm,1,1);snd(160,0.06,'square',0.02,0.6);}
       else if(w==='spread'){p.fireT=Math.max(p.fireT,-0.05)+0.17*rm;for(const a of[-0.22,0,0.22])fireB(p.x,ny,Math.sin(a)*290,-Math.cos(a)*290,0.8*dm,0);}
       else if(w==='homing'){p.fireT=Math.max(p.fireT,-0.05)+0.16*rm;fireB(p.x,ny,rnd(-30,30),-240,1.05*dm,3);}
-      else if(w==='tri'){p.fireT=Math.max(p.fireT,-0.05)+0.15*rm;const L=1+0.5*lv.lsr;fireB(p.x,ny,0,-300,dm*L,0);for(const a of[-0.32,0.32])fireB(p.x,ny,Math.sin(a)*300,-Math.cos(a)*300,dm*L*0.8,0);}
+      else if(w==='tri'){p.fireT=Math.max(p.fireT,-0.05)+0.15*rm;const L=1+0.5*lv.lsr;p.lasers=p.lasers||[];
+        for(const a of[0,-0.32,0.32]){
+          const tn=Math.tan(a);let tg=null,ty=-10;
+          for(const e of enemies){if(!e.on||e.y>ny||e.y<-4)continue;const x=p.x+tn*(ny-e.y);if(Math.abs(x-e.x)<e.rx+1.5&&e.y>ty){ty=e.y;tg=e;}}
+          let x1,y1;
+          if(tg){x1=p.x+tn*(ny-tg.y);y1=tg.y;hitEnemy(tg,dm*L);if(Math.random()<0.5)burst(x1,y1,1,'violet',40,1);}
+          else{y1=-2;x1=p.x+tn*(ny+2);}
+          p.lasers.push({x0:p.x,y0:ny,x1,y1,t:0.16});
+        }
+      }
       if(p.pu.triple>0){for(const a of[-0.3,0.3])fireB(p.x,ny+2,Math.sin(a)*280,-Math.cos(a)*280,0.8*dm,0);}
     }
   }
@@ -1859,6 +1869,9 @@ function draw(){
       const x=Math.round(p.x),y0=Math.round(p.y+shipSpr.noseY),y1=Math.max(0,Math.round(p.beamY)),hw=1+Math.min(2,lv.dmg>>1);
       if(y0>y1){ctx.fillStyle='#5a3aa8';ctx.fillRect(x-hw-1,y1,hw*2+3,y0-y1);ctx.fillStyle='#b07bff';ctx.fillRect(x-hw,y1,hw*2+1,y0-y1);ctx.fillStyle=Math.floor(time*20)%2?'#fff':'#ffe14d';ctx.fillRect(x,y1,1,y0-y1);}
     }
+    for(const l of p.lasers||[]){const a=Math.min(1,l.t/0.16);ctx.save();ctx.lineCap='round';
+      ctx.globalAlpha=0.85*a;ctx.strokeStyle='#ff3b6b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(Math.round(l.x0),Math.round(l.y0));ctx.lineTo(Math.round(l.x1),Math.round(l.y1));ctx.stroke();
+      ctx.globalAlpha=a;ctx.strokeStyle='#ffe9f0';ctx.lineWidth=1.6;ctx.stroke();ctx.restore();}
     const blink=p.inv>0&&state==='play'&&Math.floor(p.inv*14)%2===0;
     if(!blink){
       const fx=Math.round(p.x),fy=Math.round(p.y+shipSpr.engY),R=RAMP.fire,big=state==='undock'||state==='dock';
@@ -3013,7 +3026,7 @@ function loop(now){
 let rT=0;addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{if(state==='city'&&document.activeElement===$('cityIn'))return;const ow=IW,oh=IH;resize();if(state==='city'&&(ow!==IW||oh!==IH))cityInit();},150);});
 resize();setState('menu');requestAnimationFrame(loop);
 
-if(location.hash==='#debug')window.__dbg={openShop,spawnEnemy,spawnBoss,spawnStation,nextWave,setWave:w=>{wave=w;},setBiome,lv:()=>lv,state:()=>state,give:n=>{crystals+=n;},bank:n=>{bank+=n;},wave:()=>wave,god:()=>{player.hp=99;player.maxHp=99;},clear:()=>{toSpawn=0;},st:()=>station&&[station.x,station.y],pl:()=>[player.x,player.y,player.hp],dock:()=>{if(station){const D=dockPos();player.x=player.tx=D.x;player.y=player.ty=D.y+6;}},setShip:id=>{shipId=id;},upg:o=>{Object.assign(lv,o);shipSpr=buildShip(ship,lv);},ship:id=>{ship=shipById(id);shipSpr=buildShip(ship,lv);player.spT=0;},fillSuper:()=>{player.sp=1;},final:()=>{for(const e of enemies)e.on=false;wave=35;stationWave=35;ownedP=[0,1,2,3,4,5,6];curSt=NB-1;wIn=5;nextWave();},stg:()=>[wave,curSt,wIn,loopN,biomeIdx,heat,crTotal],die:()=>{die();},nw:()=>{for(const e of enemies)e.on=false;boss=null;nextWave();},killBoss:()=>{if(boss){boss.hp=1;hitEnemy(boss,5);}},mus:()=>MUS.cur,lvup:()=>{pendLv++;},pu:i=>applyPU(PU[i]),pk:o=>Object.assign(pk,o),treasure:()=>spawnEnemy('treasure'),event:k=>{eventK=k;eventT=0.01;},elite:k=>{const e=spawnEnemy(k);if(e){e.elite=true;e.hp=e.max*=3;}},daily:()=>DY,city:t=>runText(t),fxk:()=>C&&C.fx.map(f=>f.k+':'+Math.round(f.x)+(f.t!==undefined?'/'+f.t.toFixed(1):'')).join(' ')+' t='+C.t.toFixed(1),C:()=>C&&{deb:C.deb.length,B:C.B.length,ppl:C.ppl.length,fx:C.fx.length},tut:()=>tut&&tut.st,story:()=>!!storyQ};
+if(location.hash==='#debug')window.__dbg={player:()=>player,enemies:()=>enemies,openShop,spawnEnemy,spawnBoss,spawnStation,nextWave,setWave:w=>{wave=w;},setBiome,lv:()=>lv,state:()=>state,give:n=>{crystals+=n;},bank:n=>{bank+=n;},wave:()=>wave,god:()=>{player.hp=99;player.maxHp=99;},clear:()=>{toSpawn=0;},st:()=>station&&[station.x,station.y],pl:()=>[player.x,player.y,player.hp],dock:()=>{if(station){const D=dockPos();player.x=player.tx=D.x;player.y=player.ty=D.y+6;}},setShip:id=>{shipId=id;},upg:o=>{Object.assign(lv,o);shipSpr=buildShip(ship,lv);},ship:id=>{ship=shipById(id);shipSpr=buildShip(ship,lv);player.spT=0;},fillSuper:()=>{player.sp=1;},final:()=>{for(const e of enemies)e.on=false;wave=35;stationWave=35;ownedP=[0,1,2,3,4,5,6];curSt=NB-1;wIn=5;nextWave();},stg:()=>[wave,curSt,wIn,loopN,biomeIdx,heat,crTotal],die:()=>{die();},nw:()=>{for(const e of enemies)e.on=false;boss=null;nextWave();},killBoss:()=>{if(boss){boss.hp=1;hitEnemy(boss,5);}},mus:()=>MUS.cur,lvup:()=>{pendLv++;},pu:i=>applyPU(PU[i]),pk:o=>Object.assign(pk,o),treasure:()=>spawnEnemy('treasure'),event:k=>{eventK=k;eventT=0.01;},elite:k=>{const e=spawnEnemy(k);if(e){e.elite=true;e.hp=e.max*=3;}},daily:()=>DY,city:t=>runText(t),fxk:()=>C&&C.fx.map(f=>f.k+':'+Math.round(f.x)+(f.t!==undefined?'/'+f.t.toFixed(1):'')).join(' ')+' t='+C.t.toFixed(1),C:()=>C&&{deb:C.deb.length,B:C.B.length,ppl:C.ppl.length,fx:C.fx.length},tut:()=>tut&&tut.st,story:()=>!!storyQ};
 /* ================= offline režim (funguje, když je hra nahraná na webu) ================= */
 try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&window.self===window.top){navigator.serviceWorker.register('../../sw.js',{updateViaCache:'none'}).then(r=>{try{r.update();}catch(e){}}).catch(()=>{});let reloaded=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloaded||state==='play')return;reloaded=true;location.reload();});}}catch(e){}
 })();
