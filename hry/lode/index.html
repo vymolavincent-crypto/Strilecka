@@ -117,25 +117,39 @@ function placeFleetRandom(){
 const SPR_={};
 function shipSprite(L,hor){
   const key=L+(hor?'h':'v');if(SPR_[key])return SPR_[key];
-  const U=L*16,W=hor?U:16,H=hor?16:U,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
+  const U=L*24,V=24,W=hor?U:V,H=hor?V:U,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
   const put=(u,v,col)=>{g.fillStyle=col;g.fillRect(hor?u:v,hor?v:u,1,1);};
-  const d=u=>Math.max(u<4?(4-u)>>1:0,u>U-7?(u-(U-7)+1)>>1:0);
-  const hull=(u,v)=>u>=0&&u<U&&v>=5+d(u)&&v<=14-d(u);
-  const cab=(u,v)=>L>=3&&u>=U/2-6&&u<U/2+6&&v>=2&&v<=6;
+  const sd=u=>u<7?(7-u)>>1:0;
+  const bd=u=>u>U-10?((u-(U-10))+1)>>1:0;
+  const top=u=>9+Math.max(sd(u),bd(u));
+  const bot=u=>21-(bd(u)>>1);
+  const cu0=Math.floor(U*0.36),cu1=cu0+Math.floor(U*0.24);
+  const hull=(u,v)=>u>=0&&u<U&&v>=top(u)&&v<=bot(u);
+  const cab=(u,v)=>u>=cu0&&u<cu1&&v>=4&&v<=8;
   const solid=(u,v)=>hull(u,v)||cab(u,v);
-  for(let u=0;u<U;u++)for(let v=0;v<16;v++){
-    if(!solid(u,v))continue;
-    const edge=!solid(u-1,v)||!solid(u+1,v)||!solid(u,v-1)||!solid(u,v+1);
-    let col='#4a6cd4';
-    if(edge)col='#141a40';
-    else if(cab(u,v)){col='#dfe8ff';if(v===4&&u%4===1)col='#ffd166';}
-    else if(v===5+d(u))col='#f5f8ff';
-    else if(v===14-d(u))col='#e0445a';
-    else if(v===10&&u%5===2)col='#141a40';
-    else if(v===12&&u%4===1)col='#2c3d9a';
-        put(u,v,col);
+  for(let u=0;u<U;u++)for(let v=0;v<V;v++){
+    if(solid(u,v)){
+      const edge=!solid(u-1,v)||!solid(u+1,v)||!solid(u,v-1)||!solid(u,v+1);
+      let col;
+      if(edge)col='#0d1230';
+      else if(cab(u,v)){
+        if(v===4)col="#22357f";
+        else if((v===6||v===7)&&u>cu0+1&&u<cu1-1&&(u-cu0)%4!==0)col='#9fe7ff';
+        else col=u>cu1-4?'#c4cdf0':'#eef3ff';
+      } else {
+        const t=top(u),bt=bot(u);
+        if(v===t)col='#f5f8ff';
+        else if(v===t+1)col='#b8c6f2';
+        else if(v===bt)col='#e0445a';
+        else if(v===bt-1)col='#22357f';
+        else if((v===13||v===14)&&(u%6===3||u%6===4))col='#ffd166';
+        else if(v===t+2&&u%8===0)col='#2c44a0';
+        else col=v-t<=4?'#4d72d9':'#3a5cc7';
+      }
+      put(u,v,col);
+    
   }
-  if(L>=4){const m=Math.floor(U/2);for(let v=0;v<2;v++)put(m,v,'#2a1f4a');put(m+1,0,'#ff4d6d');put(m+1,1,'#ff4d6d');}
+  if(L>=4){const m=cu0+Math.floor((cu1-cu0)/2);for(let v=1;v<4;v++)put(m,v,'#2a1f4a');put(m+1,1,'#ff4d6d');put(m+2,1,'#ff4d6d');put(m+1,2,'#ff4d6d');}
   return SPR_[key]=cv.toDataURL();
 }
 function overlays(gridEl,ships){
