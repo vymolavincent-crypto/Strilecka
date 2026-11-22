@@ -69,6 +69,8 @@ button{font:inherit;cursor:pointer;border:0}
 .folder:not([open])>summary::after{transform:rotate(-90deg)}
 .fpoc{font-size:11px;background:#2c3778;color:#dfe6ff;padding:2px 7px;border-radius:10px}
 .fobsah{padding:0 8px 8px}
+.tabsec{margin-bottom:6px}
+.tabhead{display:grid;grid-template-columns:1fr auto;padding:6px 14px;font-size:11px;color:#8fa0d8;text-transform:uppercase;letter-spacing:1px}
 .fobsah .game{margin-top:8px}
 </style>
 </head>
@@ -178,14 +180,14 @@ const resetBtn = h => h.klice ? `<button class="resetHra" data-reset="${h.id}">�
 const sekce = (titul, pocet, extra) => {
   const hry = HRY.filter(h => h.hraci === pocet);
   const skupiny = [...new Set(hry.map(h => h.skupina || ''))];
-  return '<h2>' + titul + '</h2>' + skupiny.map(g => {
+  return '<h2>' + titul + '</h2><div class="tabsec"><div class="tabhead"><span>Skupina</span><span>Počet</span></div>' + skupiny.map(g => {
     const seznam = hry.filter(h => (h.skupina || '') === g)
       .sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0) || a.nazev.localeCompare(b.nazev, 'cs'));
     const obsah = seznam.map(h => karta(h) + (extra ? resetBtn(h) : '')).join('');
     const nazvy = seznam.map(h => h.nazev).join(' · ');
     return '<details class="folder"' + (g ? '' : ' open') + '><summary><span class="fnazev">' + (g || 'Ostatní') +
            ' <span class="fpoc">' + seznam.length + '</span></span><span class="fseznam">' + nazvy + '</span></summary><div class="fobsah">' + obsah + '</div></details>';
-  }).join('');
+  }).join('') + '</div>';
 };
 $('list').innerHTML =
   sekce('👥 Pro 2 hráče', 2, false) +
