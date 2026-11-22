@@ -167,7 +167,8 @@ const karta = h => `
 const resetBtn = h => h.klice ? `<button class="resetHra" data-reset="${h.id}">↺ Restartovat hru</button>` : '';
 $('list').innerHTML =
   '<h2>👥 Pro 2 hráče</h2>' + HRY.filter(h => h.hraci === 2).sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0)).map(karta).join('') +
-  '<h2>🚀 Pro 1 hráče</h2>' + HRY.filter(h => h.hraci !== 2).sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0)).map(h => karta(h) + resetBtn(h)).join('');
+  '<h2>👥👥 Pro 2–4 hráče</h2>' + HRY.filter(h => h.hraci === '2-4').sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0)).map(karta).join('') +
+  '<h2>🚀 Pro 1 hráče</h2>' + HRY.filter(h => h.hraci === 1).sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0)).map(h => karta(h) + resetBtn(h)).join('');
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-reset]'); if (!b) return;
   e.preventDefault();

@@ -1,7 +1,7 @@
 // ===== SEZNAM HER V HERNĚ =====
 // Novou hru přidáš tak, že ji dáš do složky hry/<nazev>/ a připíšeš ji sem.
 // Po každé změně zvyš VERZE o 1, aby si telefon stáhl novinky.
-self.HERNA_VERZE = 20;
+self.HERNA_VERZE = 21;
 self.HERNA_HRY = [
   {
     id: 'neon-najezd',
@@ -95,5 +95,35 @@ self.HERNA_HRY = [
     ikona: 'hry/blesk/ikona.png',
     barva: '#ffd166',
     soubory: ['hry/blesk/', 'hry/blesk/index.html', 'hry/blesk/ikona.png']
+  },
+  {
+    id: 'lode',
+    nazev: 'Námořní bitva',
+    popis: 'Hledej a potop lodě soupeře. Hraj s počítačem nebo s kamarádem na jednom telefonu.',
+    hraci: 2,
+    nove: true,
+    ikona: 'hry/lode/ikona.png',
+    barva: '#2d8cff',
+    soubory: ['hry/lode/', 'hry/lode/index.html', 'hry/lode/ikona.png']
+  },
+  {
+    id: 'zavod',
+    nazev: 'Závod raket',
+    popis: 'Klepej co nejrychleji do svého pruhu. Závod pro 2 až 4 hráče na jednom telefonu.',
+    hraci: '2-4',
+    nove: true,
+    ikona: 'hry/zavod/ikona.png',
+    barva: '#ff6bd6',
+    soubory: ['hry/zavod/', 'hry/zavod/index.html', 'hry/zavod/ikona.png']
+  },
+  {
+    id: 'pexeso',
+    nazev: 'Vesmírné pexeso',
+    popis: 'Najdi stejné vesmírné obrázky. Hrají 2 až 4 hráči na jednom telefonu.',
+    hraci: '2-4',
+    nove: true,
+    ikona: 'hry/pexeso/ikona.png',
+    barva: '#7dffa8',
+    soubory: ['hry/pexeso/', 'hry/pexeso/index.html', 'hry/pexeso/ikona.png']
   }
 ];
