@@ -554,6 +554,16 @@ function skinRows(rows,sk){
 }
 const skinById=id=>SKINS.find(k=>k.id===id)||SKINS[0];
 const SGW=29,SGH=21,SCX=14,SY0=5;
+const SIDEFX={
+  jiskra:P=>{P(["CC","cC","CC"],-9,4);P(["w"],-10,5);},
+  kladivo:P=>{P(["SS","sS","SS"],-9,6);P(["O"],-10,8);},
+  zmije:P=>{P(["G","g","G"],-9,3);P(["g"],-10,2);},
+  blesk:P=>{P(["y","Y"],-8,3);P(["v","V"],-8,5);P(["y"],-9,4);},
+  fenix:P=>{P(["r","o"],-9,5);P(["y"],-10,6);P(["r"],-9,3);},
+  trojlaser:P=>{P(["S","s"],-9,7);P(["y"],-9,9);},
+  majak:P=>{P(["s","w"],-8,2);P(["S"],-9,4);P(["S","s"],-9,7);},
+  kolejnice:P=>{P(["S","s","S"],-8,4);P(["c","C"],-9,6);P(["S"],-9,8);},
+};
 function buildShip(def,L,sk){
   L=L||{};if(sk===undefined)sk=skinById(skinId);
   const g=[];for(let y=0;y<SGH;y++)g.push(new Array(SGW).fill('.'));
@@ -568,6 +578,7 @@ function buildShip(def,L,sk){
   if(L.mag)part(["y.","s.",".s"],-4,-2);
   // loď
   base.forEach((r,py)=>{for(let px=0;px<r.length;px++)put(x0+px,SY0+py,r[px]);});
+  if(SIDEFX[def.id])SIDEFX[def.id](part);
   // horní vrstva
   if(L.hull>=1)part(["sS","Ss"],-6,7);
   if(L.hull>=2)part(["Ss"],-3,10);
