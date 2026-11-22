@@ -525,6 +525,10 @@ const SHIPS=[
    rows:[".......r","......rw","......ry","r....rRy","rR..rRoy","rRR.rRoo",".rRRrRoy","..rRRRow","..rRRRRo",".rR.rRRR","rR...R.R","R......."]},
   {id:'trojlaser',name:'Trojlaser',desc:'Tři lasery: jeden dopředu a dva šikmo do stran. Po bocích mini kulomety.',price:5000,hp:3,weapon:'tri',eng:2,ramp:'cyan',
    rows:["....w","....c","...cC","...cC","..cCC",".ccCC","bcbCC","bbbCb","bSbSC","bS..C","y.y.C","....o"]},
+  {id:'majak',name:'Maják',desc:'Vystřeluje kruh osmi střel do všech stran. Po stranách radarové talíře.',price:2600,hp:3,weapon:'nova',eng:2,ramp:'green',
+   rows:["......y",".....ws",".....sS","....ccS","...bccS","..bbbSS",".bbbSSS","bbbbSSS","bbcbSSS","bb...SS","bS...SS"]},
+  {id:'kolejnice',name:'Kolejnice',desc:'Rychlý průrazný výstřel, který proletí celou řadou nepřátel. Po bocích vodicí kolejnice.',price:3600,hp:3,weapon:'rail',eng:2,ramp:'pink',
+   rows:["......w","......z",".....zv",".....vV","....vVV","...vVVV","..vVVVV",".vVVkVV","vVVkkVV","vV...VV","v.....v"]},
 ];
 const shipById=id=>SHIPS.find(s=>s.id===id)||SHIPS[0];
 const SKINS=[
@@ -550,6 +554,16 @@ function skinRows(rows,sk){
 }
 const skinById=id=>SKINS.find(k=>k.id===id)||SKINS[0];
 const SGW=29,SGH=21,SCX=14,SY0=5;
+const SIDEFX={
+  jiskra:P=>{P(["CC","cC","CC"],-9,4);P(["w"],-10,5);},
+  kladivo:P=>{P(["SS","sS","SS"],-9,6);P(["O"],-10,8);},
+  zmije:P=>{P(["G","g","G"],-9,3);P(["g"],-10,2);},
+  blesk:P=>{P(["y","Y"],-8,3);P(["v","V"],-8,5);P(["y"],-9,4);},
+  fenix:P=>{P(["r","o"],-9,5);P(["y"],-10,6);P(["r"],-9,3);},
+  trojlaser:P=>{P(["S","s"],-9,7);P(["y"],-9,9);},
+  majak:P=>{P(["s","w"],-8,2);P(["S"],-9,4);P(["S","s"],-9,7);},
+  kolejnice:P=>{P(["S","s","S"],-8,4);P(["c","C"],-9,6);P(["S"],-9,8);},
+};
 function buildShip(def,L,sk){
   L=L||{};if(sk===undefined)sk=skinById(skinId);
   const g=[];for(let y=0;y<SGH;y++)g.push(new Array(SGW).fill('.'));
@@ -564,6 +578,7 @@ function buildShip(def,L,sk){
   if(L.mag)part(["y.","s.",".s"],-4,-2);
   // loď
   base.forEach((r,py)=>{for(let px=0;px<r.length;px++)put(x0+px,SY0+py,r[px]);});
+  if(SIDEFX[def.id])SIDEFX[def.id](part);
   // horní vrstva
   if(L.hull>=1)part(["sS","Ss"],-6,7);
   if(L.hull>=2)part(["Ss"],-3,10);
@@ -665,11 +680,31 @@ function sprCanvas(sp,css){const c=document.createElement('canvas');c.width=sp.w
   document.querySelectorAll('#diffBox button').forEach(b=>b.onclick=()=>{diffIdx=+b.dataset.d;store.set('px_diff',diffIdx);refreshMenu();snd(500,0.06,'square',0.03);});
 })();
 function planetCanvas(i,css){
-  const B=BIOMES[i],S=22,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
-  for(let y=0;y<S;y++)for(let x=0;x<S;x++){const dx=x-10.5,dy=y-10.5,d=Math.hypot(dx,dy);if(d>9.5)continue;
-    const light=(dx+dy)<-4?2:(dx+dy)<6?0:1;const band=(i===2||i===5)&&((y+Math.floor(x/4))%5===0);
-    g.fillStyle=d>8.6?'#05040f':band?B.pl[1]:B.pl[light===2?2:light===0?0:1];if(light===2&&((x+y)&1))g.fillStyle=B.pl[0];g.fillRect(x,y,1,1);}
-  if(i===3||i===6){g.fillStyle=B.pl[2];for(let x=0;x<S;x++){const y=Math.round(11+(x-11)*0.3);if(x<3||x>18)g.fillRect(x,y,1,1);}}
+  const B=BIOMES[i],S=28,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
+  const F=(x,y,col)=>{g.fillStyle=col;g.fillRect(x,y,1,1);};
+  const both=(x,y,col)=>{F(x,y,col);F(S-1-x,y,col);};
+  const tri=(tx,ty,bx,h,col)=>{for(let x=tx;x<=bx;x++){const hh=Math.round(h*(x-tx)/Math.max(1,bx-tx));for(let y=ty-hh;y<=ty+hh;y++)both(x,y,col);}};
+  const disc=(x,y,r,col)=>{for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++)if(dx*dx+dy*dy<=r*r)both(x+dx,y+dy,col);};
+  const ring=(x,y,r,col)=>{for(let dy=-r-1;dy<=r+1;dy++)for(let dx=-r-1;dx<=r+1;dx++){const d=Math.sqrt(dx*dx+dy*dy);if(d>r-0.5&&d<=r+0.5)both(x+dx,y+dy,col);}};
+  const line=(x,y0,y1,col)=>{for(let y=y0;y<=y1;y++)both(x,y,col);};
+  const c0=13.5;
+  for(let y=0;y<S;y++)for(let x=0;x<S;x++){const dx=x-c0,dy=y-c0,d=Math.hypot(dx,dy);if(d>11.2)continue;
+    const light=(dx+dy)<-5?2:(dx+dy)<7?0:1;const band=(i===2||i===5)&&((y+Math.floor(x/4))%5===0);
+    g.fillStyle=d>10.2?'#05040f':band?B.pl[1]:B.pl[light===2?2:light===0?0:1];if(light===2&&((x+y)&1))g.fillStyle=B.pl[0];g.fillRect(x,y,1,1);}
+  if(i===3||i===6){g.fillStyle=B.pl[2];for(let x=0;x<S;x++){const y=Math.round(13+(x-13)*0.3);if(x<3||x>24)g.fillRect(x,y,1,1);}}
+  // boční konstrukce každé planety
+  switch(i){
+    case 0: line(2,4,11,'#c8d0ff'); tri(0,4,3,3,'#e4e8ff'); both(1,24,'#c8d0ff'); break;
+    case 1: tri(0,12,5,4,'#e4f8ff'); tri(0,21,5,3,'#8fd3ff'); break;
+    case 2: tri(1,20,6,5,'#9e1d3a'); both(1,19,'#ffe14d'); both(2,18,'#ff8a2a'); break;
+    case 3: disc(3,8,2,'#ffd166'); disc(2,18,2,'#c6f04a'); both(3,8,'#5f8a1c'); both(2,18,'#5f8a1c'); break;
+    case 4: disc(2,9,2,'#b07bff'); disc(3,19,2,'#41e6ff'); both(2,9,'#ffffff'); break;
+    case 5: line(1,4,9,'#5a6080'); line(2,4,9,'#a0a8c8'); both(1,3,'#ff8a2a'); both(2,2,'#ffb36b'); break;
+    case 6: [[1,5],[0,9],[0,15],[1,21],[2,24]].forEach(([x,y])=>both(x,y,'#ff7af0')); ring(3,13,3,'#2e1640'); break;
+    case 7: tri(1,11,6,4,'#ffd166'); tri(2,20,6,3,'#d68a1a'); both(1,11,'#fff3c4'); break;
+    case 8: ring(3,9,2,'#ff4fd8'); ring(3,19,2,'#41e6ff'); both(3,9,'#ffffff'); break;
+    case 9: tri(0,10,5,5,'#ffe14d'); tri(0,18,5,3,'#ffffff'); break;
+  }
   c.style.width=c.style.height=(S*css)+'px';c.className='planet';return c;
 }
 function refreshMenu(){
@@ -714,9 +749,13 @@ const BIOMES=[
    roster:[['robo',9,1],['saw',6,1],['mine',4,1],['tankBot',4,2],['laserBot',3,2],['factory',1.6,3]]},
   {name:'ČERNÁ DÍRA',bg:'#05020a',stars:['#1e1030','#4a2a6a','#ff7af0'],neb:['#120820','#1e0c2e'],amb:'void',eb:6,boss:'bVoid',price:9000,pl:['#2e1640','#05020a','#ff7af0'],
    roster:[['vEye',6,1],['wraith',7,1],['vJelly',4,1],['vRock',3,1],['vSpin',3,2],['vCarrier',1.5,3]]},
-  {name:'JÁDRO GALAXIE',bg:'#100a02',stars:['#3a2a10','#8a6a20','#fff0b0'],neb:['#201406','#2a1a0a'],amb:'sparkle',eb:7,boss:'bFinal',price:0,pl:['#ffe14d','#d68a1a','#ffffff'],roster:[]},
+  {name:'PÍSKOVÁ PLANETA',bg:'#1a1206',stars:['#4a3a1a','#8a6a30','#fff0c8'],neb:['#2a1c0a','#3a2810'],amb:'sparks',eb:2,boss:'bGuard',price:5000,pl:['#f2d27a','#c4953a','#fff3c4'],
+   roster:[['rock',8,1],['spinner',4,2],['sniper',3,2],['tank',3,2],['carrier',1.5,3]]},
+ {name:'NEONOVÝ OKRUH',bg:'#070612',stars:['#2a1a4a','#7a3aa0','#ff9ff0'],neb:['#1a0a2e','#2a0f40'],amb:'sparkle',eb:4,boss:'bRobot',price:7500,pl:['#ff4fd8','#6a1fa0','#41e6ff'],
+   roster:[['saw',6,1],['laserBot',3,2],['wraith',4,1],['vSpin',3,2],['gemBat',5,1],['robo',5,1]]},
+ {name:'JÁDRO GALAXIE',bg:'#100a02',stars:['#3a2a10','#8a6a20','#fff0b0'],neb:['#201406','#2a1a0a'],amb:'sparkle',eb:7,boss:'bFinal',price:0,pl:['#ffe14d','#d68a1a','#ffffff'],roster:[]},
 ];
-const NB=7;
+const NB=9;
 let biome=BIOMES[0],biomeIdx=0,loopN=0;
 let nebula=null,nebY=0;
 function buildNebula(){
@@ -831,6 +870,9 @@ const UPG=[
  {id:'pierce',name:'Průrazné střely',desc:'Každý level: střela prolétne o 1 nepřítele víc',max:2,cost:[120,260]},
  {id:'bigshot',name:'Velké střely',desc:'Každý level: střely o 20 % silnější',max:3,cost:[120,240,400]},
  {id:'speedB',name:'Rychlé střely',desc:'Každý level: střely letí o 25 % rychleji',max:3,cost:[100,200,340]},
+ {id:'crit',name:'Kritický zásah',desc:'Každý level: šance 10 % na trojnásobný zásah',max:2,cost:[160,340]},
+ {id:'krystal',name:'Krystalový magnet',desc:'Každý level: krystaly dávají o 50 % víc',max:2,cost:[120,260]},
+ {id:'regen',name:'Regenerace',desc:'Obnoví 1 život po 30 s (level 2: po 18 s)',max:2,cost:[200,420]},
  {id:'fix', name:'Oprava',desc:'Doplní 1 život',max:0,cost:[40]},
 ];
 const PERM=[
@@ -842,8 +884,8 @@ const PERM=[
  {id:'hunter',name:'Lovec krystalů',desc:'+15 % krystalů z nepřátel',max:3,cost:[1000,2500,5000]},
  {id:'disc',name:'Sleva na stanicích',desc:'Vylepšení na stanicích o 10 % levnější',max:3,cost:[1200,2800,6000]},
 ];
-const SHIP_UP={jiskra:['gun','rate','dmg','hull','mag','msl','shd','plasma','speedB','fix'],kladivo:['gun','rate','dmg','hull','mag','drone','shd','plasma','bigshot','fix'],zmije:['gun','rate','dmg','mag','drone','msl','shd','pierce','speedB','fix'],blesk:['gun','rate','dmg','hull','mag','shd','plasma','bigshot','pierce','fix'],fenix:['rate','hull','mag','drone','msl','shd','plasma','speedB','bigshot','fix'],trojlaser:['gun','rate','dmg','hull','mag','shd','lsr','mini','bigshot','fix']};
-const SUPER={trojlaser:{name:'KŘÍŽOVÁ PALBA',dur:4},jiskra:{name:'PŘETÍŽENÍ',dur:5},kladivo:{name:'RÁZOVÁ VLNA',dur:0.6},zmije:{name:'ROJ RAKET',dur:1.6},blesk:{name:'ZPOMALENÍ ČASU',dur:5},fenix:{name:'OHNIVÝ KRUH',dur:6}};
+const SHIP_UP={jiskra:['gun','rate','dmg','hull','mag','msl','shd','plasma','speedB','regen','fix'],kladivo:['gun','rate','dmg','hull','mag','drone','shd','plasma','bigshot','crit','fix'],zmije:['gun','rate','dmg','mag','drone','msl','shd','pierce','speedB','krystal','fix'],blesk:['gun','rate','dmg','hull','mag','shd','plasma','bigshot','pierce','crit','fix'],fenix:['rate','hull','mag','drone','msl','shd','plasma','speedB','bigshot','regen','fix'],trojlaser:['gun','rate','dmg','hull','mag','shd','lsr','mini','bigshot','krystal','fix'],majak:['gun','rate','dmg','hull','mag','msl','shd','crit','bigshot','regen','fix'],kolejnice:['rate','dmg','hull','mag','drone','shd','pierce','crit','speedB','krystal','fix']};
+const SUPER={majak:{name:'SVĚTELNÁ BOUŘE',dur:4},kolejnice:{name:'PRŮRAZNÝ VÝSTŘEL',dur:3},trojlaser:{name:'KŘÍŽOVÁ PALBA',dur:4},jiskra:{name:'PŘETÍŽENÍ',dur:5},kladivo:{name:'RÁZOVÁ VLNA',dur:0.6},zmije:{name:'ROJ RAKET',dur:1.6},blesk:{name:'ZPOMALENÍ ČASU',dur:5},fenix:{name:'OHNIVÝ KRUH',dur:6}};
 const PERKS=[
  {id:'pierce',name:'Průrazné střely',desc:'Střely proletí o 1 nepřítele víc',max:3,r:1},
  {id:'crit',name:'Kritický zásah',desc:'15 % šance na trojnásobné poškození',max:3,r:1},
@@ -920,7 +962,7 @@ function banner(t,sub,dur){bannerText=t;bannerSub=sub||'';bannerT=dur||2.2;}
 let curSt=-1,wIn=5,heat=0;
 const HP_H=()=>1+0.4*heat,FIRE_H=()=>Math.min(2.2,1+0.14*heat),BUL_H=()=>Math.min(1.6,1+0.07*heat);
 const wib=()=>wIn;
-const stageOf=w=>{const r=(w-1)%36;return r===35?NB:Math.floor(r/5);};
+const stageOf=w=>{const r=(w-1)%(5*NB+1);return r===5*NB?NB:Math.floor(r/5);};
 let endless=false;
 let xp=0,plv=1,pendLv=0,treasureT=0,eventT=0,eventK='',eventN=0,eventI=0;
 const xpNeed=()=>12+(plv-1)*10;
@@ -1072,6 +1114,7 @@ function applyPU(u){
 }
 function hitEnemy(e,dmg){
   if(!e.on)return;
+  if(lv.crit&&Math.random()<0.1*lv.crit)dmg*=3;
   e.hp-=dmg;e.flash=0.05;
   if(e.d.beh==='boss'&&player&&player.spT<=0)player.sp=Math.min(1,player.sp+dmg*0.0012*(1+0.25*perm.charge));
   if(e.hp<=0)killEnemy(e);
@@ -1409,7 +1452,8 @@ sb.onclick=()=>{soundOn=!soundOn;sndLbl();store.set('px_snd',soundOn?'1':'0');};
 function fireB(x,y,vx,vy,d,k,pierce){const b=take(bullets);if(!b)return;const sm=1+0.25*((pk.speedB||0)+(lv.speedB||0));b.x=x;b.y=y;b.vx=vx*sm;b.vy=vy*sm;b.d=d*(1+0.2*((pk.bigshot||0)+(lv.bigshot||0)));b.k=k||0;b.pierce=(pierce||0)+(b.k===2?0:((pk.pierce||0)+(lv.pierce||0)));b.last=null;}
 function playerFire(dt){
   const p=player,sup=p.spT>0,over=sup&&ship.id==='jiskra',bsup=sup&&ship.id==='blesk';
-  const trisup=sup&&ship.id==='trojlaser';const dm=dmgMul()*(bsup?2:1),rm=rateMul()*(over?0.33:1)*(trisup?0.5:1),ny=p.y+shipSpr.noseY;
+  const trisup=sup&&ship.id==='trojlaser';const dm=dmgMul()*(bsup?2:1),rm=rateMul()*(over?0.33:1)*(trisup?0.5:1)*(sup&&ship.id==='majak'?0.5:1),ny=p.y+shipSpr.noseY;
+  if(lv.regen&&p.hp<p.maxHp){p.regT=(p.regT||0)+dt;if(p.regT>=[0,30,18][lv.regen]){p.regT=0;p.hp++;addFt(p.x,p.y-10,'+1 ŽIVOT','#5dff8a');}}
   const w=ship.weapon;
   p.beamOn=false;
   if(w==='beam'){
@@ -1425,6 +1469,8 @@ function playerFire(dt){
       if(w==='std'){p.fireT=Math.max(p.fireT,-0.05)+0.13*rm;fireB(p.x,ny,0,-300,dm,0);if(over){fireB(p.x-3,ny+2,-60,-290,dm,0);fireB(p.x+3,ny+2,60,-290,dm,0);}}
       else if(w==='heavy'){p.fireT=Math.max(p.fireT,-0.05)+0.34*rm;fireB(p.x,ny,0,-250,3.2*dm,1,1);snd(160,0.06,'square',0.02,0.6);}
       else if(w==='spread'){p.fireT=Math.max(p.fireT,-0.05)+0.17*rm;for(const a of[-0.22,0,0.22])fireB(p.x,ny,Math.sin(a)*290,-Math.cos(a)*290,0.8*dm,0);}
+      else if(w==='nova'){p.fireT=Math.max(p.fireT,-0.05)+0.7*rm;for(let a=0;a<8;a++){const t=a*TAU/8+0.2;fireB(p.x,p.y,Math.sin(t)*210,-Math.cos(t)*210,0.7*dm,0);}snd(420,0.08,'triangle',0.03,0.8);}
+      else if(w==='rail'){p.fireT=Math.max(p.fireT,-0.05)+0.55*rm;fireB(p.x,ny,0,-640,2.6*dm,0,8+(sup?4:0));snd(900,0.05,'sine',0.02,0.5);}
       else if(w==='homing'){p.fireT=Math.max(p.fireT,-0.05)+0.16*rm;fireB(p.x,ny,rnd(-30,30),-240,1.05*dm,3);}
       else if(w==='tri'){p.fireT=Math.max(p.fireT,-0.05)+0.15*rm;const L=1+0.5*lv.lsr;p.lasers=p.lasers||[];
         for(const a of[0,-0.32,0.32]){
@@ -1728,7 +1774,7 @@ function update(dt){
     if(it.k===3&&!it.suck)it.vy=Math.min(it.vy,22);
     if(alive&&dd<7){
       it.on=false;
-      if(it.k===0){const cm=p.pu.double>0?2:1;crystals+=cm;crTotal+=cm;mis('cr',cm);score+=2;if(Math.random()<0.5)snd(1200+Math.random()*300,0.05,'square',0.02);}
+      if(it.k===0){const cm=Math.round((p.pu.double>0?2:1)*(1+0.5*(lv.krystal||0)));crystals+=cm;crTotal+=cm;mis('cr',cm);score+=2;if(Math.random()<0.5)snd(1200+Math.random()*300,0.05,'square',0.02);}
       else if(it.k===1){if(p.hp<p.maxHp){p.hp++;banner('+1 ŽIVOT','',1.2);}else{score+=300;banner('+300','',1);}burst(it.x,it.y,12,'pink',50,1);snd(660,0.18,'triangle',0.06,1.8);vib(20);}
       else if(it.k===3){applyPU(it.pu);}
       else{p.shield=true;banner('ŠTÍT!','',1.2);burst(it.x,it.y,12,'cyan',50,1);snd(700,0.18,'triangle',0.06,1.6);vib(20);}
