@@ -147,7 +147,7 @@ function shipSprite(L,hor){
         else col=v-t<=4?'#4d72d9':'#3a5cc7';
       }
       put(u,v,col);
-    
+    }
   }
   if(L>=4){const m=cu0+Math.floor((cu1-cu0)/2);for(let v=1;v<4;v++)put(m,v,'#2a1f4a');put(m+1,1,'#ff4d6d');put(m+2,1,'#ff4d6d');put(m+1,2,'#ff4d6d');}
   return SPR_[key]=cv.toDataURL();
