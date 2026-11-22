@@ -65,7 +65,7 @@ p{margin:0;color:#a7b2dc;font-size:13px;line-height:1.6;max-width:320px}
 </div>
 <canvas id="park"></canvas>
 <div id="shop">
-  <div id="tabs"><button data-t="lide" class="on">👥 Lidé</button><button data-t="uklid">🧹 Úklid</button><button data-t="auta">🚛 Auta</button></div>
+  <div id="tabs"><button data-t="lide" class="on">👥 Lidé</button><button data-t="uklid">🧹 Úklid</button><button data-t="auta">🚛 Auta</button><button data-t="vyl">⭐ Vylepšení</button></div>
   <div id="list"></div>
 </div>
 
@@ -155,16 +155,19 @@ function save(){ G.t = Date.now(); try { localStorage.setItem(KEY, JSON.stringif
 load();
 const own = id => G.own[id] || 0, lvl = id => G.lvl[id] || 0;
 const capacity = () => 10 + G.cap * 10;
-const typeCost = t => Math.ceil(t.cena * Math.pow(1.15, own(t.id)));
-const upCost = t => Math.ceil(t.cena * 6 * Math.pow(3.2, lvl(t.id)));
+const sleva = () => Math.pow(0.92, G.sleva || 0);
+const cena = x => Math.max(1, Math.ceil(x * sleva()));
+const boost = () => 1 + 0.15 * (G.zrych || 0);
+const typeCost = t => cena(t.cena * Math.pow(1.15, own(t.id)));
+const upCost = t => cena(t.cena * 6 * Math.pow(3.2, lvl(t.id)));
 const spd = id => (G.spd && G.spd[id]) || 0;
-const intv = t => t.int * Math.pow(0.75, spd(t.id));
-const spdUpCost = t => Math.ceil(t.cena * 2 * Math.pow(2.5, spd(t.id)));
-const value = (t) => t.hod * Math.pow(2, lvl(t.id)) * (1 + 0.5 * (G.vykup || 0));
-const tripTime = () => Math.max(3, 32 * Math.pow(0.82, G.autaSpd));
+const intv = t => t.int * Math.pow(0.75, spd(t.id)) / boost();
+const spdUpCost = t => cena(t.cena * 2 * Math.pow(2.5, spd(t.id)));
+const value = (t) => t.hod * Math.pow(2, lvl(t.id)) * (1 + 0.5 * (G.vykup || 0)) * (1 + 0.25 * (G.hodn || 0));
+const tripTime = () => Math.max(3, 32 * Math.pow(0.82, G.autaSpd)) / boost();
 const truckInterval = () => tripTime() / G.auta;
 const radius = () => 7 + G.hrabe * 2.5;
-const ukSpeed = () => 16 * (1 + G.ukSpd * 0.3);
+const ukSpeed = () => 16 * (1 + G.ukSpd * 0.3) * boost();
 const recykBonus = () => G.recyk ? 0.1 * G.recyk : 0;
 
 // ============ SCÉNA ============
@@ -648,6 +651,14 @@ function shopItems(){
     { id: 'kontejner', icon: ICON.kontejner, nm: () => 'Větší kontejner', ds: () => 'Vejde se do něj o 10 odpadků víc. Teď: ' + capacity() + '.',
       btns: [{ cls: 'up', label: () => 'Koupit<small>' + fmt(capCost()) + ' Kč</small>', cost: capCost, ok: () => true, act: () => { G.cap++; } }] },
   ];
+  if (tab === 'vyl') return [
+    { id: 'zrych', icon: ICON.rychlost, nm: () => 'Zrychlení všeho' + (G.zrych ? ' <span>úr. ' + G.zrych + '</span>' : ''), ds: () => 'Lidi hází, uklízeči chodí i auta jezdí rychleji. Teď: ×' + boost().toFixed(2).replace('.', ','),
+      btns: [{ cls: 'up', label: () => (G.zrych || 0) >= 10 ? 'Max<small>&nbsp;</small>' : 'Koupit<small>' + fmt(vylCost(G.zrych || 0, 800)) + ' Kč</small>', cost: () => vylCost(G.zrych || 0, 800), ok: () => (G.zrych || 0) < 10, act: () => { G.zrych = (G.zrych || 0) + 1; } }] },
+    { id: 'sleva', icon: ICON.recyk, nm: () => 'Zlevnění všeho' + (G.sleva ? ' <span>úr. ' + G.sleva + '</span>' : ''), ds: () => 'Všechno v obchodě je o 8 % levnější. Teď: −' + Math.round((1 - sleva()) * 100) + ' %.',
+      btns: [{ cls: 'up', label: () => (G.sleva || 0) >= 10 ? 'Max<small>&nbsp;</small>' : 'Koupit<small>' + fmt(vylCost(G.sleva || 0, 1200)) + ' Kč</small>', cost: () => vylCost(G.sleva || 0, 1200), ok: () => (G.sleva || 0) < 10, act: () => { G.sleva = (G.sleva || 0) + 1; } }] },
+    { id: 'hodn', icon: ICON.vykup, nm: () => 'Cennější odpadky' + (G.hodn ? ' <span>úr. ' + G.hodn + '</span>' : ''), ds: () => 'Všechny odpadky jsou o 25 % dražší. Teď: ×' + (1 + 0.25 * (G.hodn || 0)).toFixed(2).replace('.', ','),
+      btns: [{ cls: 'up', label: () => (G.hodn || 0) >= 10 ? 'Max<small>&nbsp;</small>' : 'Koupit<small>' + fmt(vylCost(G.hodn || 0, 1000)) + ' Kč</small>', cost: () => vylCost(G.hodn || 0, 1000), ok: () => (G.hodn || 0) < 10, act: () => { G.hodn = (G.hodn || 0) + 1; } }] },
+  ];
   return [
     { id: 'auto', icon: ICON.auto, nm: () => 'Popelářské auto <span>×' + G.auta + '</span>', ds: () => 'Víc aut = kontejner se vyváží častěji. Auto přijede každých ' + truckInterval().toFixed(1).replace('.', ',') + ' s.',
       btns: [{ cls: '', label: () => G.auta >= 8 ? 'Max<small>&nbsp;</small>' : 'Koupit<small>' + fmt(autoCost()) + ' Kč</small>', cost: autoCost, ok: () => G.auta < 8, act: () => { G.auta++; nextTruck = Math.min(nextTruck, truckInterval()); } }] },
@@ -657,14 +668,15 @@ function shopItems(){
       btns: [{ cls: 'up', label: () => 'Koupit<small>' + fmt(recCost()) + ' Kč</small>', cost: recCost, ok: () => G.recyk < 20, act: () => { G.recyk++; } }] },
   ];
 }
-const uklCost = () => Math.ceil(150 * Math.pow(2.4, G.uklizeci));
-const spdCost = () => Math.ceil(400 * Math.pow(2.6, G.ukSpd));
-const rakeCost = () => Math.ceil(60 * Math.pow(3.5, G.hrabe));
-const capCost = () => Math.ceil(40 * Math.pow(2.1, G.cap));
-const autoCost = () => Math.ceil(250 * Math.pow(3, G.auta - 1));
-const aSpdCost = () => Math.ceil(30 * Math.pow(2.2, G.autaSpd));
-const vykCost = () => Math.ceil(25 * Math.pow(2.6, G.vykup || 0));
-const recCost = () => Math.ceil(500 * Math.pow(2.5, G.recyk));
+const vylCost = (n, base) => cena(base * Math.pow(2.5, n));
+const uklCost = () => cena(150 * Math.pow(2.4, G.uklizeci));
+const spdCost = () => cena(400 * Math.pow(2.6, G.ukSpd));
+const rakeCost = () => cena(60 * Math.pow(3.5, G.hrabe));
+const capCost = () => cena(40 * Math.pow(2.1, G.cap));
+const autoCost = () => cena(250 * Math.pow(3, G.auta - 1));
+const aSpdCost = () => cena(30 * Math.pow(2.2, G.autaSpd));
+const vykCost = () => cena(25 * Math.pow(2.6, G.vykup || 0));
+const recCost = () => cena(500 * Math.pow(2.5, G.recyk));
 let items = [];
 function renderShop(){
   items = shopItems();
