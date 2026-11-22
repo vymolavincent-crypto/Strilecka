@@ -71,7 +71,8 @@ button{font:inherit;cursor:pointer;border:0}
 .fpoc{font-size:11px;background:#2c3778;color:#dfe6ff;padding:2px 7px;border-radius:10px}
 .fobsah{padding:0 8px 8px}
 .tabsec{margin:10px 0 18px;background:#151a44;box-shadow:0 0 0 3px #2c3778}
-.tabhead{padding:12px 14px;font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#dfe6ff;background:#2c3778}
+.folder>summary.tabhead{display:flex;align-items:center;gap:10px;padding:14px;font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#dfe6ff;background:#2c3778}
+.folder>summary.tabhead::after{margin-left:auto}
 .fobsah .game{margin-top:8px}
 </style>
 </head>
@@ -179,21 +180,15 @@ const karta = h => `
   </a>`;
 const resetBtn = h => h.klice ? `<button class="resetHra" data-reset="${h.id}">↺ Restartovat hru</button>` : '';
 const sekce = (titul, pocet, extra) => {
-  const hry = HRY.filter(h => h.hraci === pocet);
-  const skupiny = [...new Set(hry.map(h => h.skupina || ''))];
-  return '<div class="tabsec"><div class="tabhead"><span>' + titul + '</span></div>' + skupiny.map(g => {
-    const seznam = hry.filter(h => (h.skupina || '') === g)
-      .sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0) || a.nazev.localeCompare(b.nazev, 'cs'));
-    const obsah = seznam.map(h => karta(h) + (extra ? resetBtn(h) : '')).join('');
-    const nazvy = seznam.map(h => h.nazev).join(' · ');
-    return '<details class="folder"' + (g ? '' : ' open') + '><summary><span class="fnazev">' + (g || 'Ostatní') +
-           ' <span class="fpoc">' + seznam.length + '</span></span><span class="fseznam">' + nazvy + '</span></summary><div class="fobsah">' + obsah + '</div></details>';
-  }).join('') + '</div>';
+  const hry = HRY.filter(h => h.hraci === pocet)
+    .sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0) || a.nazev.localeCompare(b.nazev, 'cs'));
+  const obsah = hry.map(h => karta(h) + (extra ? resetBtn(h) : '')).join('');
+  return '<details class="folder tabsec"><summary class="tabhead"><span>' + titul + '</span><span class="fpoc">' + hry.length + '</span></summary><div class="fobsah">' + obsah + '</div></details>';
 };
 $('list').innerHTML =
   sekce('👥 Pro 2 hráče', 2, false) +
-  sekce('👥👥 Pro 2–4 hráče', '2-4', false) +
-  sekce('🚀 Pro 1 hráče', 1, true);
+  sekce('🚀 Pro 1 hráče', 1, true) +
+  sekce('👥👥 Pro 2–4 hráče', '2-4', false);
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-reset]'); if (!b) return;
   e.preventDefault();
