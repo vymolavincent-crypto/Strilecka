@@ -61,11 +61,12 @@ button{font:inherit;cursor:pointer;border:0}
 .ic{display:inline-block;padding:0 6px;background:#2c3778;color:#fff}
 .resetHra{display:block;margin:-6px 0 16px auto;padding:6px 12px;font-family:inherit;font-weight:700;font-size:12px;background:none;border:2px solid #5a6080;color:#a7b2dc;border-radius:10px;cursor:pointer}
 .folder{margin:10px 0;background:#151a44;box-shadow:0 0 0 3px #2c3778}
-.folder>summary{list-style:none;cursor:pointer;padding:12px 14px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#dfe6ff;font-size:14px;display:flex;align-items:center;gap:8px;user-select:none}
+.folder>summary{list-style:none;cursor:pointer;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:6px 8px;align-items:center;color:#dfe6ff;user-select:none}
 .folder>summary::-webkit-details-marker{display:none}
-.folder>summary::after{content:'▾';margin-left:auto;color:#8fa0d8;transition:transform .15s}
+.folder>summary::after{content:'▾';grid-column:2;grid-row:1;color:#8fa0d8;transition:transform .15s}
+.fnazev{font-weight:900;text-transform:uppercase;letter-spacing:1px;font-size:14px}
+.fseznam{grid-column:1 / -1;font-size:12px;color:#8fa0d8;line-height:1.4}
 .folder:not([open])>summary::after{transform:rotate(-90deg)}
-.fico{font-size:18px}
 .fpoc{font-size:11px;background:#2c3778;color:#dfe6ff;padding:2px 7px;border-radius:10px}
 .fobsah{padding:0 8px 8px}
 .fobsah .game{margin-top:8px}
@@ -181,8 +182,9 @@ const sekce = (titul, pocet, extra) => {
     const seznam = hry.filter(h => (h.skupina || '') === g)
       .sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0) || a.nazev.localeCompare(b.nazev, 'cs'));
     const obsah = seznam.map(h => karta(h) + (extra ? resetBtn(h) : '')).join('');
-    return '<details class="folder"' + (g ? '' : ' open') + '><summary><span class="fico">📁</span> ' + (g || 'Ostatní') +
-           ' <span class="fpoc">' + seznam.length + '</span></summary><div class="fobsah">' + obsah + '</div></details>';
+    const nazvy = seznam.map(h => h.nazev).join(' · ');
+    return '<details class="folder"' + (g ? '' : ' open') + '><summary><span class="fnazev">' + (g || 'Ostatní') +
+           ' <span class="fpoc">' + seznam.length + '</span></span><span class="fseznam">' + nazvy + '</span></summary><div class="fobsah">' + obsah + '</div></details>';
   }).join('');
 };
 $('list').innerHTML =
