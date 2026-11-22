@@ -1,7 +1,7 @@
 // ===== SEZNAM HER V HERNĚ =====
 // Novou hru přidáš tak, že ji dáš do složky hry/<nazev>/ a připíšeš ji sem.
 // Po každé změně zvyš VERZE o 1, aby si telefon stáhl novinky.
-self.HERNA_VERZE = 21;
+self.HERNA_VERZE = 22;
 self.HERNA_HRY = [
   {
     id: 'neon-najezd',
