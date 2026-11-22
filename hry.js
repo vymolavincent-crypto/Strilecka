@@ -1,7 +1,7 @@
 // ===== SEZNAM HER V HERNĚ =====
 // Novou hru přidáš tak, že ji dáš do složky hry/<nazev>/ a připíšeš ji sem.
 // Po každé změně zvyš VERZE o 1, aby si telefon stáhl novinky.
-self.HERNA_VERZE = 22;
+self.HERNA_VERZE = 23;
 self.HERNA_HRY = [
   {
     id: 'neon-najezd',
@@ -109,7 +109,7 @@ self.HERNA_HRY = [
   {
     id: 'zavod',
     nazev: 'Závod raket',
-    popis: 'Klepej co nejrychleji do svého pruhu. Závod pro 2 až 4 hráče na jednom telefonu.',
+    popis: 'Klepej na svou raketku v rohu telefonu. Závod pro 2 až 4 hráče na jednom telefonu.',
     hraci: '2-4',
     nove: true,
     ikona: 'hry/zavod/ikona.png',
@@ -125,5 +125,15 @@ self.HERNA_HRY = [
     ikona: 'hry/pexeso/ikona.png',
     barva: '#7dffa8',
     soubory: ['hry/pexeso/', 'hry/pexeso/index.html', 'hry/pexeso/ikona.png']
+  },
+  {
+    id: 'zrada',
+    nazev: 'Zrádce na palubě',
+    popis: 'Dlouhá hra pro 2 až 4 hráče. Mezi posádkou je zrádce, který sabotuje opravy lodi. Najdete ho?',
+    hraci: '2-4',
+    nove: true,
+    ikona: 'hry/zrada/ikona.png',
+    barva: '#ff6bd6',
+    soubory: ['hry/zrada/', 'hry/zrada/index.html', 'hry/zrada/ikona.png']
   }
 ];

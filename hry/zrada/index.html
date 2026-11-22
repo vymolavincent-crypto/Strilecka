@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<!-- herna-ok -->
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vesmírná střílečka">
+<link rel="manifest" href="../../manifest.webmanifest">
+<link rel="icon" href="ikona.png">
+<title>Zrádce na palubě</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;touch-action:manipulation}
+:root{--acc:#5ee7ff}
+body{font-family:ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,"Courier New",monospace;color:#dfe6ff;background:#0b0d26;display:flex;flex-direction:column;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 10px calc(14px + env(safe-area-inset-bottom));overflow-x:hidden}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:-1;image-rendering:pixelated}
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+.top{width:100%;max-width:520px;display:flex;align-items:center;gap:8px}
+.round{width:38px;height:38px;background:#151a44;color:#dfe6ff;font-size:16px;font-weight:900;box-shadow:0 0 0 3px #2c3778;flex:none;margin:3px}
+h1{flex:1;margin:0;text-align:center;font-size:20px;letter-spacing:2px;text-transform:uppercase;color:var(--acc);text-shadow:3px 3px 0 #05061a}
+.mode{display:flex;gap:6px;margin:12px 0 6px;flex-wrap:wrap;justify-content:center}
+.mode button,.act{padding:9px 12px;background:#151a44;color:#dfe6ff;font-weight:900;font-size:12.5px;text-transform:uppercase;box-shadow:0 0 0 3px #2c3778;margin:3px}
+.mode button.on,.act.main{background:var(--acc);color:#0b0d26;box-shadow:0 0 0 3px var(--acc),inset 0 -4px 0 0 rgba(0,0,0,.25)}
+.act:disabled{opacity:.45}
+.act:active,.mode button:active,.round:active{transform:translate(2px,2px)}
+#msg{min-height:24px;font-size:14px;font-weight:800;color:#ffd166;margin:6px 0;text-align:center;text-transform:uppercase;letter-spacing:1px}
+.bottom{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;justify-content:center}
+.label{font-size:12px;font-weight:800;text-transform:uppercase;color:#8fa0d8;margin:8px 0 4px;letter-spacing:1px}
+.hidden{display:none!important}
+
+body{height:100vh;height:100dvh;overflow:hidden}
+.hud{width:100%;max-width:440px;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:900;text-transform:uppercase;color:#8fa0d8;margin-top:6px}
+.bar{display:flex;gap:3px;margin:8px 0 0}
+.seg{width:22px;height:14px;background:#151a44;box-shadow:inset 0 0 0 2px #2c3778}
+.seg.on{background:#7dffa8;box-shadow:inset 0 0 0 2px #7dffa8}
+.stage{width:100%;max-width:440px;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:16px;background:#151a44;box-shadow:0 0 0 4px #2c3778;margin:10px 0}
+.stt{font-size:20px;font-weight:900;color:var(--acc);text-transform:uppercase;letter-spacing:1px}
+.stx{font-size:15px;line-height:1.45;color:#dfe6ff;min-height:20px}
+.btns{display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px}
+.btns .act{width:100%;margin:0}
+.tr{color:#ff6bd6}
+
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="top"><button class="round" id="homeBtn" aria-label="Menu">⌂</button><h1>Zrádce na palubě</h1><div style="width:42px"></div></div>
+
+<div class="hud"><div id="rnd">Kolo –</div><div id="alive">Živí –</div></div>
+<div class="bar" id="bar"></div>
+<div class="stage"><div class="stt" id="stt"></div><div class="stx" id="stx"></div><div class="btns" id="btns"></div></div>
+
+<script>
+(() => {
+const bg=document.getElementById('bg'),bc=bg.getContext('2d');let st=[];
+const size=()=>{bg.width=Math.ceil(innerWidth/3);bg.height=Math.ceil(innerHeight/3);st=Array.from({length:70},()=>({x:Math.random()*bg.width,y:Math.random()*bg.height,v:.02+Math.random()*.08,c:Math.random()<.15?'#ffffff':'#5f6cb8'}));};
+const frame=()=>{bc.fillStyle='#0b0d26';bc.fillRect(0,0,bg.width,bg.height);for(const s of st){s.y+=s.v;if(s.y>bg.height){s.y=0;s.x=Math.random()*bg.width;}bc.fillStyle=s.c;bc.fillRect(s.x|0,s.y|0,1,1);}requestAnimationFrame(frame);};
+addEventListener('resize',size);size();frame();
+const $=id=>document.getElementById(id);
+const rnd=n=>Math.floor(Math.random()*n);
+let AC=null;
+function beep(f,d,v=.12,t='triangle'){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const n=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,n);g.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(g);g.connect(AC.destination);o.start(n);o.stop(n+d);}catch(_){}}
+function vib(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(_){}}
+function sprite(rows,pal){const h=rows.length,w=rows[0].length,c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');rows.forEach((r,y)=>[...r].forEach((ch,x)=>{if(pal[ch]){g.fillStyle=pal[ch];g.fillRect(x,y,1,1);}}));return 'url('+c.toDataURL()+')';}
+$('homeBtn').onclick=()=>location.href='../../index.html';
+
+const TARGET=12;
+let n=2,roles=[],alive=[],prog=0,round=1,cool=0,acts={},votes={},traitor=-1;
+function isTr(p){return p===traitor;}
+function actives(){return [...Array(n).keys()].filter(p=>alive[p]);}
+function hud(){
+  $('rnd').textContent='Kolo '+round;
+  $('alive').textContent='Živí: '+actives().length;
+  $('bar').innerHTML='';
+  for(let i=0;i<TARGET;i++){const d=document.createElement('div');d.className='seg'+(i<prog?' on':'');$('bar').appendChild(d);}
+}
+function show(title,text,btns,trc){
+  $('stt').textContent=title;$('stt').className='stt'+(trc?' tr':'');
+  $('stx').textContent=text;
+  const box=$('btns');box.innerHTML='';
+  btns.forEach(b=>{const el=document.createElement('button');el.className='act'+(btns.length===1?' main':'');el.textContent=b.label;el.onclick=b.fn;box.appendChild(el);});
+  hud();
+}
+function setup(){
+  show('Zrádce na palubě','Dlouhá hra pro 2 až 4 hráče na jednom telefonu. Mezi posádkou je zrádce, který sabotuje opravy lodi. Posádka musí dokončit '+TARGET+' oprav a najít zrádce hlasováním.',
+    [2,3,4].map(k=>({label:'Hrát pro '+k+(k===2?' hráče':' hráče'),fn:()=>start(k)})));
+}
+function start(k){
+  n=k;roles=new Array(n).fill('crew');traitor=rnd(n);roles[traitor]='traitor';
+  alive=new Array(n).fill(true);prog=0;round=1;cool=0;
+  roleReveal(0);
+}
+function roleReveal(i){
+  if(i>=n){actionTurn(0);return;}
+  show('Hráč '+(i+1)+': klepni a uvidíš svou roli','Ostatní se nedívejte!',[{label:'Ukaž roli',fn:()=>{
+    const tr=isTr(i);
+    show(tr?'Jsi ZRÁDCE 🦠':'Jsi POSÁDKA 🧑‍🚀',tr?'Sabotuj opravy a nenech se odhalit. Můžeš lhát v diskuzi.':'Opravuj loď a najdi zrádce. Hlasuj opatrně.',[{label:'Schovat a předat',fn:()=>roleReveal(i+1)}],tr);
+  }}]);
+}
+function actionTurn(idx){
+  const act=actives();
+  if(idx>=act.length){resolve();return;}
+  const p=act[idx];
+  show('Kolo '+round+': Hráč '+(p+1)+' vybírá akci','Ostatní se dívejte jinam!',[{label:'Jsem připravený',fn:()=>chooseAct(p,idx)}]);
+}
+function chooseAct(p,idx){
+  const opts=[{label:'🔧 Oprav (+1)',v:'oprav'},{label:'🛑 Hlídej (nic)',v:'hlidej'}];
+  if(isTr(p)&&cool===0)opts.push({label:'💣 Sabotuj (−1)',v:'sabotuj'});
+  show('Hráč '+(p+1)+': tvoje akce','Vyber tajně.',opts.map(o=>({label:o.label,fn:()=>{acts[p]=o.v;actionTurn(idx+1);}})),false);
+}
+function resolve(){
+  let d=0,sab=0;
+  for(const p of actives()){if(acts[p]==='oprav')d++;if(acts[p]==='sabotuj')sab++;}
+  prog=Math.max(0,Math.min(TARGET,prog+d-sab));
+  cool=sab>0?1:Math.max(0,cool-1);
+  acts={};
+  const txt='Opraveno: +'+d+'. '+(sab>0?'Na lodi někdo sabotoval! 💥':'Na palubě je klid.')+' Stav lodi: '+prog+'/'+TARGET+'.';
+  if(prog>=TARGET){endGame('crew');return;}
+  show('Výsledek kola '+round,txt,[{label:'Do diskuze',fn:discuss}]);
+}
+function discuss(){
+  show('Diskuze','Mluvte spolu. Kdo lže? Až budete hotovi, klepněte.',[{label:'Hlasovat',fn:()=>voteTurn(0)}]);
+}
+function voteTurn(idx){
+  const act=actives();
+  if(idx>=act.length){tally();return;}
+  const p=act[idx];
+  show('Hlasování: Hráč '+(p+1),'Ostatní se nedívejte!',[{label:'Jsem připravený',fn:()=>{
+    const others=act.filter(x=>x!==p);
+    show('Hráč '+(p+1)+': koho vyhodíš?','Hlas je tajný.',others.map(o=>({label:'Hlasuji pro Hráč '+(o+1),fn:()=>{votes[p]=o;voteTurn(idx+1);}})));
+  }}]);
+}
+function tally(){
+  const cnt={};for(const p of actives()){const v=votes[p];if(v!==undefined)cnt[v]=(cnt[v]||0)+1;}
+  votes={};
+  const best=Math.max(0,...Object.values(cnt));
+  const tops=Object.keys(cnt).filter(k=>cnt[k]===best).map(Number);
+  if(best===0||tops.length!==1){
+    nextRound('Hlasování skončilo nerozhodně. Nikdo nebyl vyhozen.');
+    return;
+  }
+  const e=tops[0];
+  alive[e]=false;
+  if(isTr(e)){endGame('crew',e);return;}
+  const crewLeft=actives().filter(p=>!isTr(p)).length;
+  if(crewLeft<=1){endGame('traitor');return;}
+  nextRound('Vyhozen Hráč '+(e+1)+'. Byl to člen posádky. Zrádce je stále mezi vámi.');
+}
+function nextRound(text){
+  show('Konec kola '+round,text,[{label:'Další kolo',fn:()=>{round++;actionTurn(0);}}]);
+}
+function endGame(w,ejected){
+  const info='Zrádce byl Hráč '+(traitor+1)+'.';
+  if(w==='crew')show('Vyhrála POSÁDKA! 🏆','Loď je opravená. '+info,[{label:'↻ Nová hra',fn:setup}]);
+  else show('Vyhrál ZRÁDCE! 🦠','Posádka nemá dost lidí na to, aby zrádce přehlasovala. '+info,[{label:'↻ Nová hra',fn:setup}],true);
+}
+setup();
+
+})();
+</script>
+</body>
+</html>

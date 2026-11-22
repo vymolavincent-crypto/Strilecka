@@ -39,8 +39,17 @@ button.c:active{background:#1a2160}
 .c.h{background:#ff4d6d;box-shadow:inset 0 0 0 3px #ffd0d0}
 .c.s{background:#7a1f33;box-shadow:inset 0 0 0 3px #ff4d6d}
 .c.ok{cursor:crosshair}
+.tray{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;min-height:50px;width:min(92vw,340px)}
+.chip{display:flex;gap:2px;padding:6px;background:#2c3778;box-shadow:0 0 0 3px #5a6080;touch-action:none;cursor:grab}
+.chip.v{flex-direction:column}
+.chip i{display:block;width:16px;height:16px;background:#5ee7ff}
+.ghost{position:fixed;display:flex;gap:2px;pointer-events:none;transform:translate(-50%,-50%);z-index:9;opacity:.9}
+.ghost.v{flex-direction:column}
+.ghost i{display:block;width:26px;height:26px;background:#5ee7ff;box-shadow:0 0 0 2px #05061a}
+#placeUI{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
 #pass{position:fixed;inset:0;background:rgba(5,6,26,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:5;text-align:center;padding:20px}
 #passTxt{font-size:18px;font-weight:900;color:var(--acc);text-transform:uppercase;letter-spacing:1px}
+.hidden{display:none!important}
 
 </style>
 </head>
@@ -50,12 +59,20 @@ button.c:active{background:#1a2160}
 
 <div class="mode" id="mode"><button data-m="ai" class="on">🤖 Počítač</button><button data-m="pvp">👥 Dva hráči</button></div>
 <div id="msg"></div>
-<div class="label" id="tTitle">Cíl</div>
-<div id="target" class="grid"></div>
-<div class="label" id="ownTitle">Tvoje flotila</div>
-<div id="own" class="grid small"></div>
-<div class="bottom"><button class="act main" id="newBtn">↻ Nová hra</button></div>
-<div id="pass" class="hidden"><div id="passTxt"></div><button class="act main" id="passBtn" style="font-size:16px;padding:16px 22px">Jsem na tahu</button></div>
+<div id="placeUI">
+  <div class="label" id="pTitle">Rozmísti lodě</div>
+  <div id="tray" class="tray"></div>
+  <div id="pgrid" class="grid"></div>
+  <div class="bottom"><button class="act" id="randBtn">🎲 Náhodně</button><button class="act" id="clrBtn">Vymazat</button><button class="act main" id="doneBtn" disabled>Hotovo</button></div>
+</div>
+<div id="gameUI" class="hidden">
+  <div class="label" id="tTitle">Cíl</div>
+  <div id="target" class="grid"></div>
+  <div class="label" id="ownTitle">Tvoje flotila</div>
+  <div id="own" class="grid small"></div>
+  <div class="bottom"><button class="act main" id="newBtn">↻ Nová hra</button></div>
+</div>
+<div id="pass" class="hidden"><div id="passTxt"></div><button class="act main" id="passBtn" style="font-size:16px;padding:16px 22px">OK</button></div>
 
 <script>
 (() => {
@@ -72,23 +89,107 @@ function sprite(rows,pal){const h=rows.length,w=rows[0].length,c=document.create
 $('homeBtn').onclick=()=>location.href='../../index.html';
 
 const N=10,FLEET=[5,4,3,3,2],NAMES=['Letadlová loď','Bitevní loď','Křižník','Ponorka','Torpédoborec'];
-let boards=[],turn=0,over=false,busy=false,mode='ai',aiQ=[];
-function placeFleet(){
+let mode='ai',boards=[],turn=0,over=false,busy=false,aiQ=[],pl=null,pIdx=0,drag=null,ghost=null,passCb=null;
+function msg(t){$('msg').textContent=t;}
+function who(p){return mode==='ai'?(p===0?'Ty':'Počítač'):'Hráč '+(p+1);}
+function showUI(w){$('placeUI').classList.toggle('hidden',w!=='place');$('gameUI').classList.toggle('hidden',w!=='game');}
+function passTo(text,cb){$('passTxt').textContent=text;$('pass').classList.remove('hidden');passCb=cb;}
+$('passBtn').onclick=()=>{$('pass').classList.add('hidden');const f=passCb;passCb=null;if(f)f();};
+function cellsOf(hor,a,L){const r=a/N|0,c=a%N;return [...Array(L)].map((_,k)=>hor?r*N+c+k:(r+k)*N+c);}
+function clampAnchor(hor,a,L){let r=a/N|0,c=a%N;if(hor)c=Math.min(c,N-L);else r=Math.min(r,N-L);return r*N+c;}
+function placeFleetRandom(){
   const g=new Array(100).fill(0),ships=[];
   for(let si=0;si<FLEET.length;si++){
     const L=FLEET[si];let ok=false;
     for(let t=0;t<300&&!ok;t++){
-      const hor=Math.random()<.5,r=rnd(hor?N:N-L+1),c=rnd(hor?N-L+1:N);
-      const cells=[...Array(L)].map((_,k)=>hor?r*N+c+k:(r+k)*N+c);
-      if(cells.every(i=>!g[i])){cells.forEach(i=>g[i]=si+1);ships.push({name:NAMES[si],cells,hit:0});ok=true;}
+      const hor=Math.random()<.5,r=Math.floor(Math.random()*(hor?N:N-L+1)),c=Math.floor(Math.random()*(hor?N-L+1:N));
+      const cells=cellsOf(hor,r*N+c,L);
+      if(cells.every(i=>!g[i])){cells.forEach(i=>g[i]=si+1);ships.push({hor,cells});ok=true;}
     }
-    if(!ok)return placeFleet();
+    if(!ok)return placeFleetRandom();
   }
-  return {g,ships,hits:new Array(100).fill(0)};
+  return {g,ships};
 }
-function who(p){return mode==='ai'?(p===0?'Ty':'Počítač'):'Hráč '+(p+1);}
-function msg(t){$('msg').textContent=t;}
-function newGame(){boards=[placeFleet(),placeFleet()];turn=0;over=false;busy=false;aiQ=[];$('pass').classList.add('hidden');render();msg('Na tahu: '+who(0));}
+function newGame(){over=false;busy=false;aiQ=[];boards=[];startPlace(0);}
+function startPlace(p){
+  pIdx=p;
+  pl={g:new Array(100).fill(0),sh:FLEET.map((L,si)=>({name:NAMES[si],len:L,cells:null,hor:true}))};
+  showUI('place');
+  $('pTitle').textContent='Hráč '+(p+1)+': rozmísti své lodě';
+  msg('Přetáhni loď na mřížku. Klepnutím ji otočíš.');
+  renderPlace();
+}
+function placedAll(){return pl.sh.every(s=>s.cells);}
+function renderPlace(){
+  const grid=$('pgrid');grid.innerHTML='';
+  for(let i=0;i<100;i++){
+    const d=document.createElement('div');d.className='c'+(pl.g[i]?' ship':'');d.dataset.i=i;
+    d.onclick=()=>{if(pl.g[i])rotate(pl.g[i]-1);};
+    grid.appendChild(d);
+  }
+  const tray=$('tray');tray.innerHTML='';
+  pl.sh.forEach((s,si)=>{
+    if(s.cells)return;
+    const chip=document.createElement('div');chip.className='chip'+(s.hor?'':' v');
+    for(let k=0;k<s.len;k++)chip.appendChild(document.createElement('i'));
+    chip.onpointerdown=e=>{e.preventDefault();drag={si,x0:e.clientX,y0:e.clientY,moved:false};chip.setPointerCapture(e.pointerId);};
+    chip.onpointermove=e=>{
+      if(!drag||drag.si!==si)return;
+      if(!drag.moved&&Math.hypot(e.clientX-drag.x0,e.clientY-drag.y0)>8){drag.moved=true;makeGhost(si);}
+      if(drag.moved&&ghost){ghost.style.left=e.clientX+'px';ghost.style.top=e.clientY+'px';}
+    };
+    chip.onpointerup=e=>endDrag(e);
+    chip.onpointercancel=()=>{drag=null;removeGhost();};
+    tray.appendChild(chip);
+  });
+  $('doneBtn').disabled=!placedAll();
+}
+function makeGhost(si){
+  removeGhost();
+  const s=pl.sh[si];ghost=document.createElement('div');ghost.className='ghost'+(s.hor?'':' v');
+  for(let k=0;k<s.len;k++)ghost.appendChild(document.createElement('i'));
+  document.body.appendChild(ghost);
+}
+function removeGhost(){if(ghost){ghost.remove();ghost=null;}}
+function endDrag(e){
+  if(!drag)return;
+  const d=drag;drag=null;removeGhost();
+  if(!d.moved){pl.sh[d.si].hor=!pl.sh[d.si].hor;renderPlace();return;}
+  const el=document.elementFromPoint(e.clientX,e.clientY);
+  const cell=el&&el.closest?el.closest('#pgrid .c'):null;
+  if(cell)tryPlace(d.si,+cell.dataset.i);else msg('Loď musí být na mřížce.');
+  renderPlace();
+}
+function tryPlace(si,i){
+  const s=pl.sh[si];
+  const cells=cellsOf(s.hor,clampAnchor(s.hor,i,s.len),s.len);
+  if(!cells.every(j=>!pl.g[j]||pl.g[j]===si+1)){msg('Tady se loď nevejde, překáží jiná.');return false;}
+  cells.forEach(j=>pl.g[j]=si+1);s.cells=cells;msg('Loď umístěna.');return true;
+}
+function rotate(si){
+  const s=pl.sh[si];const hor=!s.hor;
+  const cells=cellsOf(hor,clampAnchor(hor,s.cells[0],s.len),s.len);
+  if(!cells.every(j=>!pl.g[j]||pl.g[j]===si+1)){msg('Tady se loď neotočí.');return;}
+  s.cells.forEach(j=>pl.g[j]=0);cells.forEach(j=>pl.g[j]=si+1);
+  s.cells=cells;s.hor=hor;renderPlace();
+}
+$('clrBtn').onclick=()=>{pl.g.fill(0);pl.sh.forEach(s=>s.cells=null);renderPlace();msg('Lodě vymazány.');};
+$('randBtn').onclick=()=>{
+  const f=placeFleetRandom();pl.g=f.g;
+  f.ships.forEach((s,si)=>{pl.sh[si].cells=s.cells;pl.sh[si].hor=s.hor;});
+  renderPlace();msg('Náhodné rozmístění.');
+};
+$('doneBtn').onclick=()=>{
+  if(!placedAll())return;
+  boards[pIdx]={g:pl.g.slice(),ships:pl.sh.map(s=>({name:s.name,cells:s.cells.slice(),hit:0})),hits:new Array(100).fill(0)};
+  if(mode==='ai'){boards[1]=placeFleetRandom();boards[1]={g:boards[1].g,ships:boards[1].ships.map((s,si)=>({name:NAMES[si],cells:s.cells,hit:0})),hits:new Array(100).fill(0)};beginPlaying();return;}
+  if(pIdx===0)passTo('Předej telefon hráči 2. Nekoukej na jeho lodě!',()=>startPlace(1));
+  else passTo('Hra začíná! Předej telefon hráči 1.',beginPlaying);
+};
+function beginPlaying(){
+  turn=0;over=false;busy=false;aiQ=[];
+  showUI('game');render();msg('Na tahu: '+who(0));
+}
 function shoot(bi,i){
   const b=boards[bi];if(b.hits[i])return null;
   if(b.g[i]){b.hits[i]=2;const s=b.ships[b.g[i]-1];s.hit++;return {hit:true,sunk:s.hit===s.cells.length?s:null};}
@@ -106,8 +207,7 @@ function afterShot(r,shooter){
   else if(r.hit){msg('Zásah!');beep(520,.12);vib(20);}
   else{msg('Mimo…');beep(180,.1,.08,'sine');}
   render();
-  const target=boards[1-shooter];
-  if(allSunk(target)){
+  if(allSunk(boards[1-shooter])){
     over=true;
     msg(mode==='ai'?(shooter===0?'Vyhrál jsi! 🏆':'Počítač vyhrál'):'Vyhrál '+who(shooter)+' 🏆');
     beep(660,.2,.12);render();return;
@@ -115,16 +215,10 @@ function afterShot(r,shooter){
   busy=true;
   setTimeout(()=>{
     busy=false;turn=1-turn;
-    if(mode==='pvp'){showPass();}
+    if(mode==='pvp'){passTo('Předej telefon: na tahu '+who(turn),()=>{render();msg('Na tahu: '+who(turn));});render();}
     else{render();msg('Na tahu: '+who(turn));if(turn===1)setTimeout(aiTurn,700);}
   },r.hit?900:700);
 }
-function showPass(){
-  $('passTxt').textContent='Předej telefon: na tahu '+who(turn);
-  $('pass').classList.remove('hidden');
-  render();
-}
-$('passBtn').onclick=()=>{$('pass').classList.add('hidden');msg('Na tahu: '+who(turn));};
 function neighbours(i){
   const r=i/N|0,c=i%N,out=[];
   if(r>0)out.push(i-N);if(r<N-1)out.push(i+N);if(c>0)out.push(i-1);if(c<N-1)out.push(i+1);
@@ -136,7 +230,7 @@ function aiPick(){
   const free=[];for(let i=0;i<100;i++)if(!b.hits[i])free.push(i);
   const par=free.filter(i=>((i/N|0)+i%N)%2===0);
   const pool=par.length?par:free;
-  return pool[rnd(pool.length)];
+  return pool[Math.floor(Math.random()*pool.length)];
 }
 function aiTurn(){
   if(over||turn!==1)return;
@@ -165,9 +259,8 @@ function drawGrid(el,b,target){
   }
 }
 function render(){
-  const tb=boards[1-turn],ob=boards[turn];
-  drawGrid($('target'),tb,true);
-  drawGrid($('own'),ob,false);
+  drawGrid($('target'),boards[1-turn],true);
+  drawGrid($('own'),boards[turn],false);
   $('tTitle').textContent='Cíl: střílí '+who(turn);
   $('ownTitle').textContent='Flotila: '+who(turn);
 }

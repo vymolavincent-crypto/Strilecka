@@ -35,9 +35,9 @@ h1{flex:1;margin:0;text-align:center;font-size:20px;letter-spacing:2px;text-tran
 .pl.on{opacity:1;box-shadow:0 0 0 3px var(--c)}
 #grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:min(92vw,400px);padding:10px;background:#2c3778;box-shadow:0 0 0 4px var(--acc),8px 8px 0 4px #05061a;margin-top:10px}
 .card{aspect-ratio:1;padding:0;border:0;background:repeating-linear-gradient(45deg,#1d2565 0 6px,#151a44 6px 12px);box-shadow:inset 0 0 0 3px #3a4a8a}
-.card.open{background:#f4f6ff;background-image:var(--s);background-size:72%;background-position:center;background-repeat:no-repeat;box-shadow:0 0 0 3px #ffffff}
-.card.done{background:#1d2a5a;background-image:var(--s);background-size:60%;background-position:center;background-repeat:no-repeat;opacity:.4;box-shadow:none}
-.card.open,.card.done{image-rendering:pixelated}
+.card.open{background:#f4f6ff;background-image:var(--s);background-size:78%;background-position:center;background-repeat:no-repeat;box-shadow:0 0 0 3px #ffffff}
+.card.done{background:#1d2a5a;background-image:var(--s);background-size:66%;background-position:center;background-repeat:no-repeat;opacity:.4;box-shadow:none}
+
 
 </style>
 </head>
@@ -66,23 +66,25 @@ function sprite(rows,pal){const h=rows.length,w=rows[0].length,c=document.create
 $('homeBtn').onclick=()=>location.href='../../index.html';
 
 const COLS=['#5ee7ff','#ff6bd6','#ffd166','#7dffa8'];
+const G=(id,a,b)=>`<radialGradient id="${id}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></radialGradient>`;
 const SYMS=[
- {rows:["..aaaa..",".aaaaaa.","aaaaaaaa","rrrrrrrr","aaaaaaaa",".aaaaaa.","..aaaa..","........"],pal:{a:'#ffb020',r:'#5ee7ff'}},
- {rows:["..gggg..",".gggggg.","gkkggkkg","gggggggg",".gg..gg.","gg.gg.gg","g......g","........"],pal:{g:'#7dffa8',k:'#05061a'}},
- {rows:["...ww...","..wwww..","..wwww..","..wwww..",".rwwwwr.","rr.ww.rr","y..ww..y","...yy..."],pal:{w:'#ffffff',r:'#ff4d6d',y:'#ffd166'}},
- {rows:["...y....","...y....","yyyyyyy.",".yyyyy..","..yyy...",".yy.yy..","yy...yy.","........"],pal:{y:'#ffd166'}},
- {rows:["..wwww..",".wwg....","wwg.....","wwg.....","wwg.....","wwg.....",".wwg....","..wwww.."],pal:{w:'#dfe6ff',g:'#8fa0d8'}},
- {rows:["......cc","....cccw","...ccw..","..ccw...",".ccw....","ccw.....","cw......","w......."],pal:{c:'#5ee7ff',w:'#ffffff'}},
- {rows:["..cccc..",".cccccc.","gggggggg","gyggggyg","gggggggg",".gg..gg.",".g....g.","........"],pal:{c:'#5ee7ff',g:'#9aa6d6',y:'#ffd166'}},
- {rows:["..w..w..",".w....w.","..wgrw..",".rgggr..","..rgrw..",".w....w.","..w..w..","........"],pal:{w:'#dfe6ff',r:'#ff4d6d',g:'#8fa0d8'}} ,
- {rows:[".bbbbb..","bbggbbbb","bbggbbbb","bbgggbbb","bbbggbbb",".bbggbb.","..bbbb..","........"],pal:{b:'#2d8cff',g:'#7dffa8'}},
- {rows:["y..y..y.",".y....y.","..yyyy..","yyyyyyyy","..yyyy..",".y....y.","y..y..y.","........"],pal:{y:'#ffd166'}},
- {rows:[".ggggg..","gggggggg","gggwgggg","gggggggg","ggggwggg","gggggggg",".ggggg..","........"],pal:{g:'#9aa6d6',w:'#5f6cb8'}},
- {rows:["...w....","...w....","..www...","wwwwwww.","..www...","...w....","...w....","........"],pal:{w:'#ffffff'}},
- {rows:[".cccccc.","c......c","c.kkkk.c","c.k..k.c","c.kkkk.c","c......c",".cccccc.","........"],pal:{c:'#ff6bd6',k:'#05061a'}},
- {rows:["..wwww..",".wwwwww.","wwkkkkww","wwwwwwww","wwwwwwww",".wwwwww.","..wwww..","........"],pal:{w:'#dfe6ff',k:'#2a6fd6'}},
- {rows:["..gggg..",".gggggg.","gggkgggg","ggggggkg","gggkgggg","gkgggggg",".ggggg..","..gg...."],pal:{g:'#dfe6ff',k:'#8fa0d8'}}
+ {d:G('g1','#fff3a0','#ff9f1c')+`<circle cx="32" cy="32" r="30" fill="none"/><g stroke="#ffd166" stroke-width="4" stroke-linecap="round">${[0,45,90,135,180,225,270,315].map(a=>`<line x1="32" y1="6" x2="32" y2="14" transform="rotate(${a} 32 32)"/>`).join('')}</g><circle cx="32" cy="32" r="16" fill="url(#g1)"/>`},
+ {d:G('g2','#fffbe6','#c9d4ff')+`<circle cx="32" cy="32" r="22" fill="url(#g2)"/><circle cx="25" cy="26" r="4" fill="#9aa6d6" opacity=".5"/><circle cx="38" cy="38" r="5" fill="#9aa6d6" opacity=".5"/><circle cx="36" cy="22" r="2.5" fill="#9aa6d6" opacity=".5"/><circle cx="50" cy="12" r="1.6" fill="#fff"/><circle cx="12" cy="50" r="1.4" fill="#fff"/><circle cx="54" cy="46" r="1.2" fill="#fff"/>`},
+ {d:G('g3','#ffffff','#ffd166')+`<path d="M32 6 L39 24 L58 25 L43 37 L48 56 L32 45 L16 56 L21 37 L6 25 L25 24 Z" fill="url(#g3)" stroke="#ff9f1c" stroke-width="2" stroke-linejoin="round"/>`},
+ {d:G('g4','#ffb3d1','#ff2e63')+`<path d="M32 56 C10 40 6 28 10 19 C14 10 26 8 32 18 C38 8 50 10 54 19 C58 28 54 40 32 56 Z" fill="url(#g4)"/><path d="M18 22 C20 16 25 14 29 16" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>`},
+ {d:G('g5','#ffffff','#9fb0ea')+`<ellipse cx="32" cy="36" rx="24" ry="8" fill="none" stroke="#ffd166" stroke-width="3" transform="rotate(-18 32 36)"/><circle cx="32" cy="32" r="16" fill="url(#g5)"/><circle cx="26" cy="26" r="4" fill="#ffffff" opacity=".5"/><path d="M14 40 Q32 50 52 34" stroke="#ffd166" stroke-width="3" fill="none" opacity=".0"/><ellipse cx="32" cy="36" rx="24" ry="8" fill="none" stroke="#ffd166" stroke-width="3" transform="rotate(-18 32 36) translate(0 0)" stroke-dasharray="0 0" opacity=".0"/>`},
+ {d:G('g6','#fff7e0','#ff9f1c')+`<path d="M22 6 C18 22 26 30 32 32 C26 36 20 44 22 58 L30 58 C28 44 34 36 40 32 C34 30 28 22 30 6 Z" fill="url(#g6)" opacity="0"/><path d="M14 52 C12 36 22 24 32 14 C42 24 52 36 50 52 Z" fill="url(#g6)" stroke="#ff9f1c" stroke-width="2"/><rect x="26" y="50" width="12" height="8" rx="3" fill="#c0392b"/><path d="M22 24 Q32 20 42 24" stroke="#ff6b6b" stroke-width="3" fill="none"/><circle cx="26" cy="32" r="2.5" fill="#c0392b"/><circle cx="38" cy="36" r="2.5" fill="#c0392b"/>`},
+ {d:G('g7','#c9ffe0','#2bd47d')+`<path d="M6 32 C14 18 28 16 36 22 L50 14 L46 32 L50 50 L36 42 C28 48 14 46 6 32 Z" fill="url(#g7)" stroke="#1aa35f" stroke-width="2" stroke-linejoin="round"/><circle cx="20" cy="30" r="3.5" fill="#05061a"/><circle cx="20" cy="29" r="1.2" fill="#fff"/><path d="M28 27 L28 37 M33 28 L33 36" stroke="#1aa35f" stroke-width="2" opacity=".6"/>`},
+ {d:G('g8','#ffe0a3','#ffb347')+`<path d="M6 40 C6 22 20 12 32 12 C44 12 58 22 58 40 Z" fill="url(#g8)"/><path d="M10 44 C10 52 54 52 54 44 Z" fill="#fff"/><g fill="#ff4d6d"><circle cx="20" cy="28" r="3"/><circle cx="34" cy="22" r="3"/><circle cx="46" cy="32" r="3"/><circle cx="28" cy="36" r="2.5"/></g><path d="M8 44 H56" stroke="#c96a2b" stroke-width="2" opacity=".4"/>`},
+ {d:G('g9','#9ff7ff','#1e90ff')+`<path d="M10 22 L22 8 L42 8 L54 22 L32 56 Z" fill="url(#g9)" stroke="#0a5fbf" stroke-width="2" stroke-linejoin="round"/><path d="M10 22 H54 M22 8 L32 22 L42 8 M32 22 L32 56" stroke="#0a5fbf" stroke-width="1.6" fill="none" opacity=".5"/><path d="M18 14 L24 12" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>`},
+ {d:G('g10','#eaffc2','#7bc043')+`<path d="M32 10 C48 10 56 22 54 36 C52 50 42 56 32 56 C22 56 12 50 10 36 C8 22 16 10 32 10 Z" fill="url(#g10)"/><path d="M32 12 C34 4 42 2 48 4" stroke="#4b7d2a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="24" cy="26" rx="4" ry="6" fill="#fff" opacity=".5" transform="rotate(20 24 26)"/>`},
+ {d:G('g11','#ffd6e8','#ff6bd6')+`<g fill="url(#g11)">${[0,72,144,216,288].map(a=>`<ellipse cx="32" cy="20" rx="9" ry="13" transform="rotate(${a} 32 32)"/>`).join('')}</g><circle cx="32" cy="32" r="7" fill="#ffd166"/><circle cx="30" cy="30" r="2" fill="#fff" opacity=".7"/>`},
+ {d:G('g12','#ffe27a','#ffb000')+`<path d="M34 4 L14 36 H30 L26 60 L50 26 H34 L40 4 Z" fill="url(#g12)" stroke="#e08a00" stroke-width="2" stroke-linejoin="round"/>`},
+ {d:G('g13','#8ef0ff','#2d7dff')+`<path d="M32 6 L56 20 V44 L32 58 L8 44 V20 Z" fill="url(#g13)" stroke="#1b4fb8" stroke-width="2" stroke-linejoin="round"/><path d="M32 6 V58 M8 20 L56 44 M56 20 L8 44" stroke="#fff" stroke-width="1.2" opacity=".25"/>`},
+ {d:G('g14','#ffd0c4','#ff5a3c')+`<ellipse cx="32" cy="22" rx="22" ry="16" fill="url(#g14)"/><path d="M24 10 Q32 0 40 10" stroke="#3b7d2a" stroke-width="3" fill="none"/><rect x="20" y="36" width="24" height="18" rx="6" fill="#ffe27a"/><circle cx="24" cy="44" r="2" fill="#c0392b"/><circle cx="40" cy="48" r="2" fill="#c0392b"/><circle cx="32" cy="52" r="2" fill="#c0392b"/>`},
+ {d:G('g15','#e6d4ff','#8e5bff')+`<path d="M32 8 L40 22 L56 24 L44 36 L48 54 L32 46 L16 54 L20 36 L8 24 L24 22 Z" fill="url(#g15)" stroke="#5b2fd6" stroke-width="2" stroke-linejoin="round"/><circle cx="32" cy="30" r="5" fill="#fff" opacity=".8"/>`}
 ];
+const svgUrl=s=>'url("data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs>${SYMS[s].d.match(/<defs>/)?'':''}</defs>${SYMS[s].d}</svg>`)+'")';
 let n=2,turn=0,score=[],first=null,lock=false,matched=0,over=false;
 function msg(t){$('msg').textContent=t;}
 function name(p){return 'Hráč '+(p+1);}
@@ -100,7 +102,7 @@ function build(){
   const g=$('grid');g.innerHTML='';
   ids.forEach(s=>{
     const b=document.createElement('button');b.className='card';b.dataset.s=s;
-    b.style.setProperty('--s',sprite(SYMS[s].rows,SYMS[s].pal));
+    b.style.setProperty('--s',svgUrl(s));
     b.onclick=()=>flip(b);g.appendChild(b);
   });
   msg('Na tahu: '+name(0));updatePlayers();
