@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<!-- herna-ok -->
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vesmírná střílečka">
+<link rel="manifest" href="../../manifest.webmanifest">
+<link rel="icon" href="ikona.png">
+<title>Kdo je první</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;touch-action:manipulation}
+:root{--acc:#5ee7ff}
+body{font-family:ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,"Courier New",monospace;color:#dfe6ff;background:#0b0d26;display:flex;flex-direction:column;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 10px calc(14px + env(safe-area-inset-bottom));overflow-x:hidden}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:-1;image-rendering:pixelated}
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+.top{width:100%;max-width:520px;display:flex;align-items:center;gap:8px}
+.round{width:38px;height:38px;background:#151a44;color:#dfe6ff;font-size:16px;font-weight:900;box-shadow:0 0 0 3px #2c3778;flex:none;margin:3px}
+h1{flex:1;margin:0;text-align:center;font-size:20px;letter-spacing:2px;text-transform:uppercase;color:var(--acc);text-shadow:3px 3px 0 #05061a}
+.mode{display:flex;gap:6px;margin:12px 0 6px;flex-wrap:wrap;justify-content:center}
+.mode button,.act{padding:9px 12px;background:#151a44;color:#dfe6ff;font-weight:900;font-size:12.5px;text-transform:uppercase;box-shadow:0 0 0 3px #2c3778;margin:3px}
+.mode button.on,.act.main{background:var(--acc);color:#0b0d26;box-shadow:0 0 0 3px var(--acc),inset 0 -4px 0 0 rgba(0,0,0,.25)}
+.act:disabled{opacity:.45}
+.act:active,.mode button:active,.round:active{transform:translate(2px,2px)}
+#msg{min-height:24px;font-size:14px;font-weight:800;color:#ffd166;margin:6px 0;text-align:center;text-transform:uppercase;letter-spacing:1px}
+.bottom{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;justify-content:center}
+.label{font-size:12px;font-weight:800;text-transform:uppercase;color:#8fa0d8;margin:8px 0 4px;letter-spacing:1px}
+.hidden{display:none!important}
+
+#arena{width:100%;max-width:520px;flex:1;min-height:0;display:grid;gap:6px;margin:8px 0;touch-action:manipulation}
+#arena.n2{grid-template-rows:1fr 1fr}
+#arena.n3{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+#arena.n3 .z:nth-child(3){grid-column:1 / span 2}
+#arena.n4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+body{height:100vh;height:100dvh;overflow:hidden;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+.z{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:#8b1e2e;color:#fff;font-weight:900;text-transform:uppercase;user-select:none;-webkit-user-select:none;box-shadow:inset 0 0 0 4px #05061a;cursor:pointer}
+.z.rot{transform:rotate(180deg)}
+.z.wait{background:#8b1e2e}
+.z.go{background:#1f9e5a}
+.z.early{background:#5a3aa8}
+.z.won{background:#ffd166;color:#0b0d26}
+.z .who{font-size:12px;letter-spacing:1px;color:var(--c)}
+.z .big{font-size:clamp(20px,6vw,34px);text-shadow:3px 3px 0 #05061a}
+.z .pts{font-size:14px;letter-spacing:2px}
+#mid{width:100%;max-width:520px;display:flex;justify-content:space-between;align-items:center}
+#modes{display:flex}
+.z.won.rot,.z.early.rot{transform:rotate(180deg)}
+#pass{position:fixed;inset:0;background:rgba(5,6,26,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:5;text-align:center;padding:20px}
+#passTxt{font-size:18px;font-weight:900;color:var(--acc);text-transform:uppercase;letter-spacing:1px}
+
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="top"><button class="round" id="homeBtn" aria-label="Menu">⌂</button><h1>Kdo je první</h1><div style="width:42px"></div></div>
+
+<div class="mode" id="modes"><button data-n="2" class="on">2 hráči</button><button data-n="3">3 hráči</button><button data-n="4">4 hráči</button></div>
+<div id="arena" class="n2"></div>
+<div id="mid"><div id="msg"></div><button class="act" id="newBtn">↻ Nová hra</button></div>
+<div id="pass" class="hidden"><div id="passTxt"></div><button class="act main" id="passBtn" style="font-size:16px;padding:16px 22px">OK</button></div>
+
+<script>
+(() => {
+const bg=document.getElementById('bg'),bc=bg.getContext('2d');let st=[];
+const size=()=>{bg.width=Math.ceil(innerWidth/3);bg.height=Math.ceil(innerHeight/3);st=Array.from({length:70},()=>({x:Math.random()*bg.width,y:Math.random()*bg.height,v:.02+Math.random()*.08,c:Math.random()<.15?'#ffffff':'#5f6cb8'}));};
+const frame=()=>{bc.fillStyle='#0b0d26';bc.fillRect(0,0,bg.width,bg.height);for(const s of st){s.y+=s.v;if(s.y>bg.height){s.y=0;s.x=Math.random()*bg.width;}bc.fillStyle=s.c;bc.fillRect(s.x|0,s.y|0,1,1);}requestAnimationFrame(frame);};
+addEventListener('resize',size);size();frame();
+const $=id=>document.getElementById(id);
+const rnd=n=>Math.floor(Math.random()*n);
+let AC=null;
+function beep(f,d,v=.12,t='triangle'){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const n=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,n);g.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(g);g.connect(AC.destination);o.start(n);o.stop(n+d);}catch(_){}}
+function vib(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(_){}}
+function sprite(rows,pal){const h=rows.length,w=rows[0].length,c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');rows.forEach((r,y)=>[...r].forEach((ch,x)=>{if(pal[ch]){g.fillStyle=pal[ch];g.fillRect(x,y,1,1);}}));return 'url('+c.toDataURL()+')';}
+$('homeBtn').onclick=()=>location.href='../../index.html';
+
+const COLS=['#41e6ff','#ff6bd6','#7dffa8','#ffd166'],WIN=5;
+let n=2,score=[],state='idle',timer=null,goAt=0,zones=[],over=false;
+function layout(k){
+  const a=$('arena');a.className='n'+k;a.innerHTML='';zones=[];
+  for(let p=0;p<k;p++){
+    const z=document.createElement('div');z.className='z';
+    if(k===2&&p===0)z.classList.add('rot');
+    if(k===3&&p<2)z.classList.add('rot');
+    if(k===4&&p<2)z.classList.add('rot');
+    z.style.setProperty('--c',COLS[p]);
+    z.innerHTML='<div class="who">Hráč '+(p+1)+'</div><div class="big">ČEKEJ</div><div class="pts"></div>';
+    z.addEventListener('pointerdown',e=>{e.preventDefault();tap(p);});
+    a.appendChild(z);zones.push(z);
+  }
+}
+function paint(){zones.forEach((z,p)=>{z.querySelector('.pts').textContent='● '.repeat(score[p])||'–';});}
+function msg(t){$('msg').textContent=t;}
+function setAll(cls,big){zones.forEach(z=>{z.className='z'+(z.classList.contains('rot')?' rot':'')+(cls?' '+cls:'');z.querySelector('.big').textContent=big;});}
+function newGame(k){
+  if(k)n=k;clearTimeout(timer);score=new Array(n).fill(0);over=false;state='idle';
+  document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('on',+b.dataset.n===n));
+  layout(n);paint();msg('Klepni na svou část, až se rozsvítí zeleně.');setTimeout(startRound,400);
+}
+function startRound(){
+  if(over)return;
+  state='wait';setAll('wait','ČEKEJ…');msg('Čekej na zelenou…');
+  timer=setTimeout(()=>{state='go';goAt=performance.now();setAll('go','KLEPNI!');msg('Teď!');beep(880,.15,.12);vib(30);},1500+Math.random()*3000);
+}
+function tap(p){
+  if(over)return;
+  if(state==='wait'){
+    state='early';clearTimeout(timer);
+    score[p]=Math.max(0,score[p]-1);paint();
+    zones[p].className='z early'+(zones[p].classList.contains('rot')?' rot':'');zones[p].querySelector('.big').textContent='PŘEDČASNĚ!';
+    msg('Hráč '+(p+1)+' klepl moc brzy (−1 bod).');beep(160,.2,.1,'sawtooth');vib([40,40,40]);
+    setTimeout(()=>{if(!over){state='idle';startRound();}},1400);return;
+  }
+  if(state==='go'){
+    state='done';score[p]++;paint();
+    zones.forEach((z,q)=>{if(q===p){z.className='z won'+(z.classList.contains('rot')?' rot':'');z.querySelector('.big').textContent='VYHRÁL JSI!';}else{z.className='z'+(z.classList.contains('rot')?' rot':'');z.querySelector('.big').textContent='·';}});
+    msg('Hráč '+(p+1)+' je první! ('+Math.round(performance.now()-goAt)+' ms)');beep(660,.2,.12);vib(60);
+    if(score[p]>=WIN){over=true;$('passTxt').textContent='Vyhrál Hráč '+(p+1)+' 🏆';$('passBtn').textContent='Nová hra';$('passBtn').onclick=()=>{$('pass').classList.add('hidden');newGame();};$('pass').classList.remove('hidden');return;}
+    setTimeout(()=>{if(!over){state='idle';startRound();}},1600);
+  }
+}
+document.querySelectorAll('#modes button').forEach(b=>b.onclick=()=>newGame(+b.dataset.n));
+$('newBtn').onclick=()=>newGame();
+newGame(2);
+
+})();
+</script>
+</body>
+</html>

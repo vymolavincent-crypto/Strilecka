@@ -1,10 +1,11 @@
 // ===== SEZNAM HER V HERNĚ =====
 // Novou hru přidáš tak, že ji dáš do složky hry/<nazev>/ a připíšeš ji sem.
 // Po každé změně zvyš VERZE o 1, aby si telefon stáhl novinky.
-self.HERNA_VERZE = 31;
+self.HERNA_VERZE = 32;
 self.HERNA_HRY = [
   {
     id: 'neon-najezd',
+    skupina: 'Akční',
     nazev: 'Neonový nájezd',
     popis: 'Vesmírná střílečka. Táhni prstem, sbírej krystaly a poraz bosse.',
     hraci: 1,
@@ -20,6 +21,7 @@ self.HERNA_HRY = [
   },
   {
     id: 'park',
+    skupina: 'Klikání a budování',
     nove: true,
     nazev: 'Úklid v parku',
     popis: 'Kupuj lidi, kteří v parku hází odpadky. Sbírej je, vydělávej a kupuj popelářská auta.',
@@ -37,6 +39,7 @@ self.HERNA_HRY = [
   },
   {
     id: 'hokej',
+    skupina: 'Akce',
     nazev: 'Vzdušný hokej',
     popis: 'Každý drží jednu stranu telefonu. Kdo dá první 7 gólů, vyhrává.',
     hraci: 2,
@@ -47,6 +50,7 @@ self.HERNA_HRY = [
   },
   {
     id: 'piskvorky',
+    skupina: 'Strategie',
     nazev: 'Piškvorky',
     popis: 'Pět značek v řadě vyhrává. Hraj s kamarádem nebo s počítačem.',
     hraci: 2,
@@ -57,6 +61,7 @@ self.HERNA_HRY = [
   },
   {
     id: 'ctyri',
+    skupina: 'Strategie',
     nazev: 'Čtyři v řadě',
     popis: 'Házej kolečka do sloupců. Kdo první spojí čtyři, vyhrává.',
     hraci: 2,
@@ -68,6 +73,7 @@ self.HERNA_HRY = [
   ,
   {
     id: 'souboj',
+    skupina: 'Akce',
     nove: true,
     nazev: 'Vesmírný souboj',
     popis: 'Dvě lodě proti sobě. Uhýbej, střílej asteroidy a sbírej bonusy.',
@@ -78,6 +84,7 @@ self.HERNA_HRY = [
   },
   {
     id: 'sumo',
+    skupina: 'Akce',
     nove: true,
     nazev: 'Pixel Sumo',
     popis: 'Vystrč soupeře z plošiny, která se zmenšuje. Ťuknutím uděláš náraz.',
@@ -88,6 +95,7 @@ self.HERNA_HRY = [
   },
   {
     id: 'blesk',
+    skupina: 'Rychlé výzvy',
     nove: true,
     nazev: 'Bleskový souboj',
     popis: 'Pět rychlých výzev: reakce, přetahovaná, počítání, barvy a příklady.',
@@ -98,6 +106,7 @@ self.HERNA_HRY = [
   },
   {
     id: 'lode',
+    skupina: 'Strategie',
     nazev: 'Námořní bitva',
     popis: 'Hledej a potop lodě soupeře. Hraj s počítačem nebo s kamarádem na jednom telefonu.',
     hraci: 2,
@@ -108,6 +117,7 @@ self.HERNA_HRY = [
   },
   {
     id: 'zavod',
+    skupina: 'Závody',
     nazev: 'Závod raket',
     popis: 'Klepej na svou raketku v rohu telefonu. Závod pro 2 až 4 hráče na jednom telefonu.',
     hraci: '2-4',
@@ -118,6 +128,7 @@ self.HERNA_HRY = [
   },
   {
     id: 'pexeso',
+    skupina: 'Karty a paměť',
     nazev: 'Vesmírné pexeso',
     popis: 'Najdi stejné vesmírné obrázky. Hrají 2 až 4 hráči na jednom telefonu.',
     hraci: '2-4',
@@ -128,6 +139,7 @@ self.HERNA_HRY = [
   },
   {
     id: 'zrada',
+    skupina: 'Dlouhé hry',
     nazev: 'Zrádce na palubě',
     popis: 'Dlouhá hra pro 2 až 4 hráče. Mezi posádkou je zrádce, který sabotuje opravy lodi. Najdete ho?',
     hraci: '2-4',
@@ -135,5 +147,38 @@ self.HERNA_HRY = [
     ikona: 'hry/zrada/ikona.png',
     barva: '#ff6bd6',
     soubory: ['hry/zrada/', 'hry/zrada/index.html', 'hry/zrada/ikona.png']
+  },
+  {
+    id: 'dela',
+    nove: true,
+    nazev: 'Dělostřelectvo',
+    popis: 'Dvě děla na kopcích. Nastav úhel a sílu, zasáhni soupeře třikrát. Hrajete na jednom telefonu.',
+    hraci: 2,
+    skupina: 'Akce',
+    ikona: 'hry/dela/ikona.png',
+    barva: '#ff8a2a',
+    soubory: ['hry/dela/', 'hry/dela/index.html', 'hry/dela/ikona.png']
+  },
+  {
+    id: 'kostky',
+    nove: true,
+    nazev: 'Kostky o sto',
+    popis: 'Hoď dvěma kostkami a sčítej body. Jednička ti body z tahu vezme. Kdo první nasbírá sto, vyhrává.',
+    hraci: '2-4',
+    skupina: 'Šťastné hody',
+    ikona: 'hry/kostky/ikona.png',
+    barva: '#ffd166',
+    soubory: ['hry/kostky/', 'hry/kostky/index.html', 'hry/kostky/ikona.png']
+  },
+  {
+    id: 'reakce',
+    nove: true,
+    nazev: 'Kdo je první',
+    popis: 'Čekej na zelenou a klepni dřív než soupeř. Klepnutí moc brzy stojí bod. Hrají 2 až 4 hráči.',
+    hraci: '2-4',
+    skupina: 'Rychlé výzvy',
+    ikona: 'hry/reakce/ikona.png',
+    barva: '#7dffa8',
+    soubory: ['hry/reakce/', 'hry/reakce/index.html', 'hry/reakce/ikona.png']
   }
 ];

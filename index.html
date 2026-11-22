@@ -60,6 +60,7 @@ button{font:inherit;cursor:pointer;border:0}
 .box button{margin-top:18px;width:100%;padding:12px;background:#5ee7ff;color:#0b0d26;font-weight:900;letter-spacing:1px;box-shadow:inset 0 -5px 0 0 #2aa9c9}
 .ic{display:inline-block;padding:0 6px;background:#2c3778;color:#fff}
 .resetHra{display:block;margin:-6px 0 16px auto;padding:6px 12px;font-family:inherit;font-weight:700;font-size:12px;background:none;border:2px solid #5a6080;color:#a7b2dc;border-radius:10px;cursor:pointer}
+.grp{margin:14px 4px 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#8fa0d8;font-weight:800}
 </style>
 </head>
 <body>
@@ -165,10 +166,19 @@ const karta = h => `
     <div class="play">▶</div>
   </a>`;
 const resetBtn = h => h.klice ? `<button class="resetHra" data-reset="${h.id}">↺ Restartovat hru</button>` : '';
+const sekce = (titul, pocet, extra) => {
+  const hry = HRY.filter(h => h.hraci === pocet);
+  const skupiny = [...new Set(hry.map(h => h.skupina || ''))];
+  return '<h2>' + titul + '</h2>' + skupiny.map(g =>
+    (g ? '<h3 class="grp">' + g + '</h3>' : '') +
+    hry.filter(h => (h.skupina || '') === g)
+       .sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0) || a.nazev.localeCompare(b.nazev, 'cs'))
+       .map(h => karta(h) + (extra ? resetBtn(h) : '')).join('')).join('');
+};
 $('list').innerHTML =
-  '<h2>👥 Pro 2 hráče</h2>' + HRY.filter(h => h.hraci === 2).sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0)).map(karta).join('') +
-  '<h2>👥👥 Pro 2–4 hráče</h2>' + HRY.filter(h => h.hraci === '2-4').sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0)).map(karta).join('') +
-  '<h2>🚀 Pro 1 hráče</h2>' + HRY.filter(h => h.hraci === 1).sort((a, b) => (b.nove ? 1 : 0) - (a.nove ? 1 : 0)).map(h => karta(h) + resetBtn(h)).join('');
+  sekce('👥 Pro 2 hráče', 2, false) +
+  sekce('👥👥 Pro 2–4 hráče', '2-4', false) +
+  sekce('🚀 Pro 1 hráče', 1, true);
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-reset]'); if (!b) return;
   e.preventDefault();
