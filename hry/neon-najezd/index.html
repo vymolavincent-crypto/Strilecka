@@ -828,6 +828,9 @@ const UPG=[
  {id:'plasma',name:'Plazmové dělo',desc:'Obří střela, proletí vším',max:2,cost:[260,480]},
  {id:'lsr', name:'Silnější lasery',desc:'Střely všech tří laserů o 50 % silnější',max:3,cost:[150,300,500]},
  {id:'mini',name:'Rychlé kulomety',desc:'Mini kulomety na bocích střílí rychleji',max:3,cost:[200,400,650]},
+ {id:'pierce',name:'Průrazné střely',desc:'Každý level: střela prolétne o 1 nepřítele víc',max:2,cost:[120,260]},
+ {id:'bigshot',name:'Velké střely',desc:'Každý level: střely o 20 % silnější',max:3,cost:[120,240,400]},
+ {id:'speedB',name:'Rychlé střely',desc:'Každý level: střely letí o 25 % rychleji',max:3,cost:[100,200,340]},
  {id:'fix', name:'Oprava',desc:'Doplní 1 život',max:0,cost:[40]},
 ];
 const PERM=[
@@ -839,7 +842,7 @@ const PERM=[
  {id:'hunter',name:'Lovec krystalů',desc:'+15 % krystalů z nepřátel',max:3,cost:[1000,2500,5000]},
  {id:'disc',name:'Sleva na stanicích',desc:'Vylepšení na stanicích o 10 % levnější',max:3,cost:[1200,2800,6000]},
 ];
-const SHIP_UP={jiskra:['rate','dmg','gun','mag','fix'],kladivo:['dmg','hull','shd','plasma','fix'],zmije:['rate','msl','gun','drone','fix'],blesk:['dmg','mag','shd','hull','fix'],fenix:['msl','drone','hull','shd','fix'],trojlaser:['lsr','mini','rate','hull','fix']};
+const SHIP_UP={jiskra:['gun','rate','dmg','hull','mag','msl','shd','plasma','speedB','fix'],kladivo:['gun','rate','dmg','hull','mag','drone','shd','plasma','bigshot','fix'],zmije:['gun','rate','dmg','mag','drone','msl','shd','pierce','speedB','fix'],blesk:['gun','rate','dmg','hull','mag','shd','plasma','bigshot','pierce','fix'],fenix:['rate','hull','mag','drone','msl','shd','plasma','speedB','bigshot','fix'],trojlaser:['gun','rate','dmg','hull','mag','shd','lsr','mini','bigshot','fix']};
 const SUPER={trojlaser:{name:'KŘÍŽOVÁ PALBA',dur:4},jiskra:{name:'PŘETÍŽENÍ',dur:5},kladivo:{name:'RÁZOVÁ VLNA',dur:0.6},zmije:{name:'ROJ RAKET',dur:1.6},blesk:{name:'ZPOMALENÍ ČASU',dur:5},fenix:{name:'OHNIVÝ KRUH',dur:6}};
 const PERKS=[
  {id:'pierce',name:'Průrazné střely',desc:'Střely proletí o 1 nepřítele víc',max:3,r:1},
@@ -1403,7 +1406,7 @@ const sb=$('soundBtn');const sndLbl=()=>{sb.textContent=soundOn?'♪':'×';};snd
 sb.onclick=()=>{soundOn=!soundOn;sndLbl();store.set('px_snd',soundOn?'1':'0');};
 
 /* ================= střelba hráče ================= */
-function fireB(x,y,vx,vy,d,k,pierce){const b=take(bullets);if(!b)return;const sm=1+0.25*(pk.speedB||0);b.x=x;b.y=y;b.vx=vx*sm;b.vy=vy*sm;b.d=d*(1+0.2*(pk.bigshot||0));b.k=k||0;b.pierce=(pierce||0)+(b.k===2?0:(pk.pierce||0));b.last=null;}
+function fireB(x,y,vx,vy,d,k,pierce){const b=take(bullets);if(!b)return;const sm=1+0.25*((pk.speedB||0)+(lv.speedB||0));b.x=x;b.y=y;b.vx=vx*sm;b.vy=vy*sm;b.d=d*(1+0.2*((pk.bigshot||0)+(lv.bigshot||0)));b.k=k||0;b.pierce=(pierce||0)+(b.k===2?0:((pk.pierce||0)+(lv.pierce||0)));b.last=null;}
 function playerFire(dt){
   const p=player,sup=p.spT>0,over=sup&&ship.id==='jiskra',bsup=sup&&ship.id==='blesk';
   const trisup=sup&&ship.id==='trojlaser';const dm=dmgMul()*(bsup?2:1),rm=rateMul()*(over?0.33:1)*(trisup?0.5:1),ny=p.y+shipSpr.noseY;
