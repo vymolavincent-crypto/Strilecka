@@ -94,7 +94,16 @@ table.lb tr.me td{color:#ffe14d}
 .bar{height:8px;background:#1c2470;position:relative}.bar i{position:absolute;left:0;top:0;bottom:0;background:#ffe14d}
 .mis .rowx{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .mis button{font-size:13px;padding:6px 12px}
+
+html,body{background:#0a2418}
+.overlay{background:linear-gradient(rgba(10,36,24,.93),rgba(10,36,24,.93));}
+button{border-color:#2fb35a;background:#0f2e1c;box-shadow:0 5px 0 #05140c,inset 0 -4px 0 #1f7a3d}
+button:active{box-shadow:0 2px 0 #05140c,inset 0 -4px 0 #1f7a3d}
+button.sec{border-color:#e0262f;background:#2a0d12;box-shadow:0 4px 0 #14060a,inset 0 -3px 0 #7a1620}
+button.gold{border-color:#ffd24a;background:#2a200a;box-shadow:0 5px 0 #14100a,inset 0 -4px 0 #d68a1a}
+#menuShipName{color:#ffd24a!important}
 </style>
+<style id="xmas-theme">body{background:#0a2418!important}.act.main,.mode button.on{background:#e0262f!important;color:#fff!important;box-shadow:0 0 0 3px #2fb35a,inset 0 -4px 0 rgba(0,0,0,.25)!important}.act:not(.main){box-shadow:0 0 0 3px #1f7a3d!important}</style>
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -668,7 +677,7 @@ function sprCanvas(sp,css){const c=document.createElement('canvas');c.width=sp.w
 
 /* ================= DOM nadpisy ================= */
 (function buildDom(){
-  const tb=$('titleBox');tb.appendChild(textCanvas('NEONOVÝ','#41e6ff',7));const t2=textCanvas('NÁJEZD','#ff4fd8',7);t2.style.marginTop='4px';tb.appendChild(t2);
+  const tb=$('titleBox');tb.appendChild(textCanvas('VÁNOCE','#ff3b4e',7));const t2=textCanvas('NÁJEZD','#5dff8a',7);t2.style.marginTop='4px';tb.appendChild(t2);
   $('pauseTitle').appendChild(textCanvas('PAUZA','#fff',6));
   $('shopTitle').appendChild(textCanvas('STANICE','#5dff8a',6));
   $('hangarTitle').appendChild(textCanvas('HANGÁR','#ffe14d',6));
