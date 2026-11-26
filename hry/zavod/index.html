@@ -132,5 +132,18 @@ newGame();
 
 })();
 </script>
+<!-- xmas-snow -->
+<canvas id="xmasSnow" style="position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:40"></canvas>
+<script>
+(function(){
+var c=document.getElementById('xmasSnow'),g=c.getContext('2d'),F=[];
+function size(){c.width=Math.ceil(innerWidth/3);c.height=Math.ceil(innerHeight/3);}
+function init(){F=[];for(var i=0;i<45;i++)F.push({x:Math.random()*c.width,y:Math.random()*c.height,v:.12+Math.random()*.25,s:Math.random()*6});}
+function frame(){g.clearRect(0,0,c.width,c.height);g.fillStyle='#ffffff';
+for(var i=0;i<F.length;i++){var f=F[i];f.y+=f.v;f.x+=Math.sin(f.y*.2+f.s)*.15;if(f.y>c.height){f.y=-2;f.x=Math.random()*c.width;}g.fillRect(f.x|0,f.y|0,1,1);}
+requestAnimationFrame(frame);}
+addEventListener('resize',function(){size();});size();init();frame();
+})();
+</script>
 </body>
 </html>
