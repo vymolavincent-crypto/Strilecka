@@ -763,6 +763,8 @@ const BIOMES=[
 const NB=10;
 let biome=BIOMES[0],biomeIdx=0,loopN=0;
 const XMAS_SNOW=true;const xsn=[];
+const XMAS_COL=['#e0262f','#2fb35a','#ffd24a','#ffffff'];
+for(const b of BIOMES){b.stars=['#ffd24a','#ffffff','#ff6b7a'];b.neb=['#0d2b1f','#2a0d14'];b.amb='snow';}
 let nebula=null,nebY=0;
 function buildNebula(){
   const c=document.createElement('canvas');c.width=IW;c.height=IH;const g=c.getContext('2d');
@@ -1886,7 +1888,9 @@ function draw(){
   if(nebula){const y=Math.round(nebY);ctx.drawImage(nebula,0,y-IH);ctx.drawImage(nebula,0,y);}
   else{ctx.fillStyle=biome.bg;ctx.fillRect(0,0,IW,IH);}
   if(biomeIdx===6){const bh=SP.blackhole;ctx.drawImage(bh.c,Math.round(IW/2)-bh.hw,Math.round(IH*0.3)-bh.hh);}
-  if(XMAS_SNOW){if(!xsn.length){for(let i=0;i<70;i++)xsn.push({x:Math.random()*IW,y:Math.random()*IH,v:6+Math.random()*10,s:Math.random()*6});}
+  if(XMAS_SNOW){if(!xsn.length){for(let i=0;i<110;i++)xsn.push({x:Math.random()*IW,y:Math.random()*IH,v:6+Math.random()*10,s:Math.random()*6});}
+    for(let x=0;x<IW;x+=7){ctx.fillStyle=XMAS_COL[(((x/7)|0)+(time*4|0))%3];ctx.fillRect(x,2,3,3);}
+    ctx.fillStyle='#1f7a3d';ctx.fillRect(0,1,IW,1);
     ctx.fillStyle='#ffffff';for(const f of xsn)ctx.fillRect(f.x|0,f.y|0,f.s>3?2:1,f.s>3?2:1);}
   const wl=warpT>0?Math.round(warpT*10):0;
   for(let l=0;l<3;l++){ctx.fillStyle=biome.stars[l];for(const s of stars)if(s.l===l)ctx.fillRect(s.x|0,(s.y|0)-wl*(l+1),1,(l===2?2:1)+wl*(l+1));}
@@ -3093,13 +3097,16 @@ try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&window
 <canvas id="xmasSnow" style="position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:40"></canvas>
 <script>
 (function(){
-var c=document.getElementById('xmasSnow'),g=c.getContext('2d'),F=[];
-function size(){c.width=Math.ceil(innerWidth/3);c.height=Math.ceil(innerHeight/3);}
-function init(){F=[];for(var i=0;i<45;i++)F.push({x:Math.random()*c.width,y:Math.random()*c.height,v:.12+Math.random()*.25,s:Math.random()*6});}
-function frame(){g.clearRect(0,0,c.width,c.height);g.fillStyle='#ffffff';
+var c=document.getElementById('xmasSnow'),g=c.getContext('2d'),F=[],T=0;
+var COL=['#e0262f','#2fb35a','#ffd24a','#ffffff'];
+function size(){c.width=Math.ceil(innerWidth/3);c.height=Math.ceil(innerHeight/3);F=[];for(var i=0;i<70;i++)F.push({x:Math.random()*c.width,y:Math.random()*c.height,v:.14+Math.random()*.3,s:Math.random()*6});}
+function frame(){T++;g.clearRect(0,0,c.width,c.height);
+g.fillStyle='#1f7a3d';g.fillRect(0,0,c.width,1);
+for(var x=0;x<c.width;x+=4){g.fillStyle=COL[((x/4)+T/30|0)%3];g.fillRect(x,1,2,2);}
+g.fillStyle='#ffffff';
 for(var i=0;i<F.length;i++){var f=F[i];f.y+=f.v;f.x+=Math.sin(f.y*.2+f.s)*.15;if(f.y>c.height){f.y=-2;f.x=Math.random()*c.width;}g.fillRect(f.x|0,f.y|0,1,1);}
 requestAnimationFrame(frame);}
-addEventListener('resize',function(){size();});size();init();frame();
+addEventListener('resize',size);size();frame();
 })();
 </script>
 </body>

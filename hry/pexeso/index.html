@@ -174,13 +174,16 @@ build();
 <canvas id="xmasSnow" style="position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:40"></canvas>
 <script>
 (function(){
-var c=document.getElementById('xmasSnow'),g=c.getContext('2d'),F=[];
-function size(){c.width=Math.ceil(innerWidth/3);c.height=Math.ceil(innerHeight/3);}
-function init(){F=[];for(var i=0;i<45;i++)F.push({x:Math.random()*c.width,y:Math.random()*c.height,v:.12+Math.random()*.25,s:Math.random()*6});}
-function frame(){g.clearRect(0,0,c.width,c.height);g.fillStyle='#ffffff';
+var c=document.getElementById('xmasSnow'),g=c.getContext('2d'),F=[],T=0;
+var COL=['#e0262f','#2fb35a','#ffd24a','#ffffff'];
+function size(){c.width=Math.ceil(innerWidth/3);c.height=Math.ceil(innerHeight/3);F=[];for(var i=0;i<70;i++)F.push({x:Math.random()*c.width,y:Math.random()*c.height,v:.14+Math.random()*.3,s:Math.random()*6});}
+function frame(){T++;g.clearRect(0,0,c.width,c.height);
+g.fillStyle='#1f7a3d';g.fillRect(0,0,c.width,1);
+for(var x=0;x<c.width;x+=4){g.fillStyle=COL[((x/4)+T/30|0)%3];g.fillRect(x,1,2,2);}
+g.fillStyle='#ffffff';
 for(var i=0;i<F.length;i++){var f=F[i];f.y+=f.v;f.x+=Math.sin(f.y*.2+f.s)*.15;if(f.y>c.height){f.y=-2;f.x=Math.random()*c.width;}g.fillRect(f.x|0,f.y|0,1,1);}
 requestAnimationFrame(frame);}
-addEventListener('resize',function(){size();});size();init();frame();
+addEventListener('resize',size);size();frame();
 })();
 </script>
 </body>
