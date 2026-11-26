@@ -529,6 +529,8 @@ const SHIPS=[
    rows:["......y",".....ws",".....sS","....ccS","...bccS","..bbbSS",".bbbSSS","bbbbSSS","bbcbSSS","bb...SS","bS...SS"]},
   {id:'kolejnice',name:'Kolejnice',desc:'Rychlý průrazný výstřel, který proletí celou řadou nepřátel. Po bocích vodicí kolejnice.',price:3600,hp:3,weapon:'rail',eng:2,ramp:'pink',
    rows:["......w","......z",".....zv",".....vV","....vVV","...vVVV","..vVVVV",".vVVkVV","vVVkkVV","vV...VV","v.....v"]},
+  {id:'skritek',name:'Skřítek',desc:'Vánoční loď s kruhem dárků do všech stran. Po bocích rolničky.',price:3300,hp:3,weapon:'nova',eng:2,ramp:'fire',
+   rows:["...yy...","..wwyy..","..rrrr..",".rrRRrr.","rrRRRRrr","rrRwwRrr",".rRRRRr.",".rRRRRr.","rR.rr.Rr","R......R","y......y","oo....oo"]},
 ];
 const shipById=id=>SHIPS.find(s=>s.id===id)||SHIPS[0];
 const SKINS=[
@@ -703,7 +705,8 @@ function planetCanvas(i,css){
     case 6: [[1,5],[0,9],[0,15],[1,21],[2,24]].forEach(([x,y])=>both(x,y,'#ff7af0')); ring(3,13,3,'#2e1640'); break;
     case 7: tri(1,11,6,4,'#ffd166'); tri(2,20,6,3,'#d68a1a'); both(1,11,'#fff3c4'); break;
     case 8: ring(3,9,2,'#ff4fd8'); ring(3,19,2,'#41e6ff'); both(3,9,'#ffffff'); break;
-    case 9: tri(0,10,5,5,'#ffe14d'); tri(0,18,5,3,'#ffffff'); break;
+    case 9: disc(3,6,2,'#c0392b'); line(3,8,9,'#2ecc71'); ring(3,16,3,'#ffffff'); tri(1,20,5,3,'#2ecc71'); both(3,5,'#ffe14d'); break;
+    case 10: tri(0,10,5,5,'#ffe14d'); tri(0,18,5,3,'#ffffff'); break;
   }
   c.style.width=c.style.height=(S*css)+'px';c.className='planet';return c;
 }
@@ -753,10 +756,13 @@ const BIOMES=[
    roster:[['rock',8,1],['spinner',4,2],['sniper',3,2],['tank',3,2],['carrier',1.5,3]]},
  {name:'NEONOVÝ OKRUH',bg:'#070612',stars:['#2a1a4a','#7a3aa0','#ff9ff0'],neb:['#1a0a2e','#2a0f40'],amb:'sparkle',eb:4,boss:'bRobot',price:7500,pl:['#ff4fd8','#6a1fa0','#41e6ff'],
    roster:[['saw',6,1],['laserBot',3,2],['wraith',4,1],['vSpin',3,2],['gemBat',5,1],['robo',5,1]]},
+ {name:'VÁNOČNÍ PÓL',bg:'#061a26',stars:['#2a4a66','#7aa8c8','#ffffff'],neb:['#0a2a30','#1a2a1e'],amb:'snow',eb:1,boss:'bIce',price:6500,pl:['#e8f7ff','#c0392b','#2ecc71'],
+   roster:[['flake',8,1],['iceRock',3,1],['jelly',4,2],['shard',5,2],['comet',3,1],['turret',2,3]]},
  {name:'JÁDRO GALAXIE',bg:'#100a02',stars:['#3a2a10','#8a6a20','#fff0b0'],neb:['#201406','#2a1a0a'],amb:'sparkle',eb:7,boss:'bFinal',price:0,pl:['#ffe14d','#d68a1a','#ffffff'],roster:[]},
 ];
-const NB=9;
+const NB=10;
 let biome=BIOMES[0],biomeIdx=0,loopN=0;
+const XMAS_SNOW=true;const xsn=[];
 let nebula=null,nebY=0;
 function buildNebula(){
   const c=document.createElement('canvas');c.width=IW;c.height=IH;const g=c.getContext('2d');
@@ -884,8 +890,8 @@ const PERM=[
  {id:'hunter',name:'Lovec krystalů',desc:'+15 % krystalů z nepřátel',max:3,cost:[1000,2500,5000]},
  {id:'disc',name:'Sleva na stanicích',desc:'Vylepšení na stanicích o 10 % levnější',max:3,cost:[1200,2800,6000]},
 ];
-const SHIP_UP={jiskra:['gun','rate','dmg','hull','mag','msl','shd','plasma','speedB','regen','fix'],kladivo:['gun','rate','dmg','hull','mag','drone','shd','plasma','bigshot','crit','fix'],zmije:['gun','rate','dmg','mag','drone','msl','shd','pierce','speedB','krystal','fix'],blesk:['gun','rate','dmg','hull','mag','shd','plasma','bigshot','pierce','crit','fix'],fenix:['rate','hull','mag','drone','msl','shd','plasma','speedB','bigshot','regen','fix'],trojlaser:['gun','rate','dmg','hull','mag','shd','lsr','mini','bigshot','krystal','fix'],majak:['gun','rate','dmg','hull','mag','msl','shd','crit','bigshot','regen','fix'],kolejnice:['rate','dmg','hull','mag','drone','shd','pierce','crit','speedB','krystal','fix']};
-const SUPER={majak:{name:'SVĚTELNÁ BOUŘE',dur:4},kolejnice:{name:'PRŮRAZNÝ VÝSTŘEL',dur:3},trojlaser:{name:'KŘÍŽOVÁ PALBA',dur:4},jiskra:{name:'PŘETÍŽENÍ',dur:5},kladivo:{name:'RÁZOVÁ VLNA',dur:0.6},zmije:{name:'ROJ RAKET',dur:1.6},blesk:{name:'ZPOMALENÍ ČASU',dur:5},fenix:{name:'OHNIVÝ KRUH',dur:6}};
+const SHIP_UP={skritek:['gun','rate','dmg','hull','mag','msl','shd','crit','bigshot','regen','fix'],jiskra:['gun','rate','dmg','hull','mag','msl','shd','plasma','speedB','regen','fix'],kladivo:['gun','rate','dmg','hull','mag','drone','shd','plasma','bigshot','crit','fix'],zmije:['gun','rate','dmg','mag','drone','msl','shd','pierce','speedB','krystal','fix'],blesk:['gun','rate','dmg','hull','mag','shd','plasma','bigshot','pierce','crit','fix'],fenix:['rate','hull','mag','drone','msl','shd','plasma','speedB','bigshot','regen','fix'],trojlaser:['gun','rate','dmg','hull','mag','shd','lsr','mini','bigshot','krystal','fix'],majak:['gun','rate','dmg','hull','mag','msl','shd','crit','bigshot','regen','fix'],kolejnice:['rate','dmg','hull','mag','drone','shd','pierce','crit','speedB','krystal','fix']};
+const SUPER={skritek:{name:'VÁNOČNÍ DÁREK',dur:4},majak:{name:'SVĚTELNÁ BOUŘE',dur:4},kolejnice:{name:'PRŮRAZNÝ VÝSTŘEL',dur:3},trojlaser:{name:'KŘÍŽOVÁ PALBA',dur:4},jiskra:{name:'PŘETÍŽENÍ',dur:5},kladivo:{name:'RÁZOVÁ VLNA',dur:0.6},zmije:{name:'ROJ RAKET',dur:1.6},blesk:{name:'ZPOMALENÍ ČASU',dur:5},fenix:{name:'OHNIVÝ KRUH',dur:6}};
 const PERKS=[
  {id:'pierce',name:'Průrazné střely',desc:'Střely proletí o 1 nepřítele víc',max:3,r:1},
  {id:'crit',name:'Kritický zásah',desc:'15 % šance na trojnásobné poškození',max:3,r:1},
@@ -1418,12 +1424,15 @@ function useCode(raw){
   if(c==='VSECHNO'){
     owned=SHIPS.map(x=>x.id);ownedP=BIOMES.map((_,i)=>i);ownedSk=SKINS.map(x=>x.id);
     store.set('px_owned',JSON.stringify(owned));store.set('px_planets',JSON.stringify(ownedP));store.set('px_skins',JSON.stringify(ownedSk));
+  }else if(c==='VANOCE'){
+    bank+=3000;store.set('px_bank',bank);
+    if(!owned.includes('skritek')){owned.push('skritek');store.set('px_owned',JSON.stringify(owned));}
   }else if(c==='5000'){
     bank+=5000;store.set('px_bank',bank);
   }else return 'Tenhle kód neznám.';
   used.push(c);store.set('px_codes',JSON.stringify(used));
   showBank();refreshMenu();snd(880,0.25,'square',0.06,1.6);vib(30);
-  return c==='VSECHNO'?'Odemčeny všechny rakety, planety a skiny.':'Připsáno 5 000 krystalů do banky!';
+  return c==='VSECHNO'?'Odemčeny všechny rakety, planety a skiny.':c==='VANOCE'?'Veselé Vánoce! Připsáno 3 000 krystalů a odemčen Skřítek.':'Připsáno 5 000 krystalů do banky!';
 }
 $('codeBtn').onclick=()=>{$('codeUI').classList.remove('hidden');$('codeIn').value='';$('codeMsg').textContent='';snd(660,0.1,'triangle',0.05);};
 $('codeBack').onclick=()=>{$('codeUI').classList.add('hidden');snd(330,0.08,'triangle',0.05);};
@@ -1560,6 +1569,7 @@ function update(dt){
   time+=dt;
   const wm=1+warpT*5;for(const s of stars){s.y+=s.v*dt*wm;if(s.y>IH){s.y-=IH;s.x=Math.random()*IW;}}
   nebY=(nebY+dt*4)%IH;
+  for(const f of xsn){f.y+=f.v*dt;f.x+=Math.sin(f.y*0.04+f.s)*6*dt;if(f.y>IH){f.y=-2;f.x=Math.random()*IW;}}
   if(shake>0)shake=Math.max(0,shake-dt);
   if(bannerT>0)bannerT-=dt;
   for(const p of parts){if(!p.on)continue;p.life-=dt;if(p.life<=0){p.on=false;continue;}p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=0.95;p.vy*=0.95;}
@@ -1876,6 +1886,8 @@ function draw(){
   if(nebula){const y=Math.round(nebY);ctx.drawImage(nebula,0,y-IH);ctx.drawImage(nebula,0,y);}
   else{ctx.fillStyle=biome.bg;ctx.fillRect(0,0,IW,IH);}
   if(biomeIdx===6){const bh=SP.blackhole;ctx.drawImage(bh.c,Math.round(IW/2)-bh.hw,Math.round(IH*0.3)-bh.hh);}
+  if(XMAS_SNOW){if(!xsn.length){for(let i=0;i<70;i++)xsn.push({x:Math.random()*IW,y:Math.random()*IH,v:6+Math.random()*10,s:Math.random()*6});}
+    ctx.fillStyle='#ffffff';for(const f of xsn)ctx.fillRect(f.x|0,f.y|0,f.s>3?2:1,f.s>3?2:1);}
   const wl=warpT>0?Math.round(warpT*10):0;
   for(let l=0;l<3;l++){ctx.fillStyle=biome.stars[l];for(const s of stars)if(s.l===l)ctx.fillRect(s.x|0,(s.y|0)-wl*(l+1),1,(l===2?2:1)+wl*(l+1));}
   if(biome.amb){const A=biome.amb,col=A==='snow'?'#e4f8ff':A==='ember'?'#ff8a2a':A==='sparkle'?'#ffffff':A==='sparks'?'#ffe14d':A==='void'?'#ff7af0':'#c6f04a';ctx.fillStyle=col;
