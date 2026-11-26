@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<!-- herna-ok -->
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vesmírná střílečka">
+<link rel="manifest" href="../../manifest.webmanifest">
+<link rel="icon" href="ikona.png">
+<title>Vyšší, nižší</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;touch-action:manipulation}
+:root{--acc:#5ee7ff}
+body{font-family:ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,"Courier New",monospace;color:#dfe6ff;background:#0b0d26;display:flex;flex-direction:column;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 10px calc(14px + env(safe-area-inset-bottom));overflow-x:hidden}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:-1;image-rendering:pixelated}
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+.top{width:100%;max-width:520px;display:flex;align-items:center;gap:8px}
+.round{width:38px;height:38px;background:#151a44;color:#dfe6ff;font-size:16px;font-weight:900;box-shadow:0 0 0 3px #2c3778;flex:none;margin:3px}
+h1{flex:1;margin:0;text-align:center;font-size:20px;letter-spacing:2px;text-transform:uppercase;color:var(--acc);text-shadow:3px 3px 0 #05061a}
+.mode{display:flex;gap:6px;margin:12px 0 6px;flex-wrap:wrap;justify-content:center}
+.mode button,.act{padding:9px 12px;background:#151a44;color:#dfe6ff;font-weight:900;font-size:12.5px;text-transform:uppercase;box-shadow:0 0 0 3px #2c3778;margin:3px}
+.mode button.on,.act.main{background:var(--acc);color:#0b0d26;box-shadow:0 0 0 3px var(--acc),inset 0 -4px 0 0 rgba(0,0,0,.25)}
+.act:disabled{opacity:.45}
+.act:active,.mode button:active,.round:active{transform:translate(2px,2px)}
+#msg{min-height:24px;font-size:14px;font-weight:800;color:#ffd166;margin:6px 0;text-align:center;text-transform:uppercase;letter-spacing:1px}
+.bottom{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;justify-content:center}
+.label{font-size:12px;font-weight:800;text-transform:uppercase;color:#8fa0d8;margin:8px 0 4px;letter-spacing:1px}
+.hidden{display:none!important}
+
+#pass{position:fixed;inset:0;background:rgba(5,6,26,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:5;text-align:center;padding:20px}
+#passTxt{font-size:18px;font-weight:900;color:var(--acc);text-transform:uppercase;letter-spacing:1px}
+#players{width:100%;max-width:520px;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.pl{padding:8px;background:#151a44;box-shadow:0 0 0 3px #2c3778;text-align:center;font-weight:900;text-transform:uppercase;font-size:12px;color:var(--c)}
+.pl .pts{font-size:22px;color:#dfe6ff;margin-top:2px}
+.pl.on{box-shadow:0 0 0 4px var(--c)}
+.pl.out{opacity:.4}
+.pl .lv{font-size:12px;color:#8fa0d8;margin-top:2px;letter-spacing:2px}
+
+#table{display:flex;gap:18px;align-items:center;justify-content:center;margin:14px 0 6px;min-height:120px}
+.card{width:82px;height:116px;background:#f4f6ff;color:#1a1630;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;box-shadow:0 0 0 4px #05061a,0 0 0 7px #5ee7ff}
+.card.hid{background:#2c3778;color:#2c3778;box-shadow:0 0 0 4px #05061a,0 0 0 7px #8fa0d8}
+#guess{display:flex;gap:10px;justify-content:center;margin:6px 0}
+#guess button{min-width:120px;padding:14px 10px}
+#guess button:disabled{opacity:.35}
+
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="top"><button class="round" id="homeBtn" aria-label="Menu">⌂</button><h1>Vyšší, nižší</h1><div style="width:42px"></div></div>
+
+<div class="mode" id="modes"><button data-n="2" class="on">2 hráči</button><button data-n="3">3 hráči</button><button data-n="4">4 hráči</button></div>
+<div id="players"></div>
+<div id="msg"></div>
+<div id="table"><div class="card" id="cardA">?</div><div class="card hid" id="cardB">?</div></div>
+<div id="guess"><button class="act main" id="hi">Vyšší ↑</button><button class="act main" id="lo">Nižší ↓</button></div>
+<div class="bottom"><button class="act" id="nextBtn" disabled>Další hráč</button></div>
+<button class="act" id="newBtn" style="margin-top:12px">↻ Nová hra</button>
+<div id="pass" class="hidden"><div id="passTxt"></div><button class="act main" id="passBtn" style="font-size:16px;padding:16px 22px">OK</button></div>
+
+<script>
+(() => {
+const bg=document.getElementById('bg'),bc=bg.getContext('2d');let st=[];
+const size=()=>{bg.width=Math.ceil(innerWidth/3);bg.height=Math.ceil(innerHeight/3);st=Array.from({length:70},()=>({x:Math.random()*bg.width,y:Math.random()*bg.height,v:.02+Math.random()*.08,c:Math.random()<.15?'#ffffff':'#5f6cb8'}));};
+const frame=()=>{bc.fillStyle='#0b0d26';bc.fillRect(0,0,bg.width,bg.height);for(const s of st){s.y+=s.v;if(s.y>bg.height){s.y=0;s.x=Math.random()*bg.width;}bc.fillStyle=s.c;bc.fillRect(s.x|0,s.y|0,1,1);}requestAnimationFrame(frame);};
+addEventListener('resize',size);size();frame();
+const $=id=>document.getElementById(id);
+const rnd=n=>Math.floor(Math.random()*n);
+let AC=null;
+function beep(f,d,v=.12,t='triangle'){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const n=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,n);g.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(g);g.connect(AC.destination);o.start(n);o.stop(n+d);}catch(_){}}
+function vib(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(_){}}
+function sprite(rows,pal){const h=rows.length,w=rows[0].length,c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');rows.forEach((r,y)=>[...r].forEach((ch,x)=>{if(pal[ch]){g.fillStyle=pal[ch];g.fillRect(x,y,1,1);}}));return 'url('+c.toDataURL()+')';}
+$('homeBtn').onclick=()=>location.href='../../index.html';
+
+const COLS=['#41e6ff','#ff6bd6','#7dffa8','#ffd166'],LABEL=['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+let n=2,lives=[],pts=[],deck=[],cur=0,table=0,phase='wait',over=false;
+const rankOf=v=>v;
+function fresh(){const d=[];for(let r=1;r<=13;r++)for(let k=0;k<4;k++)d.push(r);for(let i=d.length-1;i>0;i--){const j=rnd(i+1);[d[i],d[j]]=[d[j],d[i]];}return d;}
+function alive(p){return lives[p]>0;}
+function nextAlive(from){let p=from;for(let k=0;k<n;k++){p=(p+1)%n;if(alive(p))return p;}return -1;}
+function ui(){
+  const box=$('players');box.innerHTML='';
+  for(let p=0;p<n;p++){const el=document.createElement('div');el.className='pl'+(!alive(p)?' out':'')+(phase!=='wait'&&!over&&p===cur?' on':'');el.style.setProperty('--c',COLS[p]);el.innerHTML='Hráč '+(p+1)+'<div class="pts">'+pts[p]+' b</div><div class="lv">'+'♥'.repeat(lives[p])+'</div>';box.appendChild(el);}
+  document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('on',+b.dataset.n===n));
+  $('cardA').textContent=LABEL[table]||'?';
+  $('hi').disabled=$('lo').disabled=phase!=='guess';
+  $('nextBtn').disabled=phase!=='done';
+}
+function showPass(t,cb){$('passTxt').textContent=t;$('passBtn').onclick=()=>{$('pass').classList.add('hidden');cb();};$('pass').classList.remove('hidden');}
+function turn(){
+  if(over)return;
+  if(deck.length<1){finish();return;}
+  phase='wait';ui();
+  showPass('Předej telefon: Hráč '+(cur+1),()=>{
+    phase='guess';$('cardB').textContent='?';$('cardB').classList.add('hid');
+    $('msg').textContent='Hráč '+(cur+1)+': bude další karta vyšší, nebo nižší?';ui();
+  });
+}
+function guess(higher){
+  if(phase!=='guess')return;
+  const b=deck.pop();
+  $('cardB').textContent=LABEL[b];$('cardB').classList.remove('hid');
+  const a=table;table=b;
+  let t;
+  if(a===b){t='Stejná hodnota, nikdo nic nedostává.';beep(330,.12,.08);}
+  else if((b>a)===higher){pts[cur]++;t='Správně! +1 bod.';beep(780,.12,.08);}
+  else{lives[cur]--;t='Špatně. Ztrácíš život.';beep(160,.3,.12,'sawtooth');vib(60);}
+  $('msg').textContent=t;
+  phase='done';ui();
+  if(lives.filter((x,p)=>x>0).length<=1){setTimeout(finish,600);return;}
+}
+function advance(){
+  cur=nextAlive(cur);
+  if(cur<0){finish();return;}
+  turn();
+}
+function finish(){
+  over=true;phase='over';ui();
+  const alivePs=[...Array(n).keys()].filter(alive);
+  let w;
+  if(alivePs.length===1)w=alivePs;
+  else{const best=Math.max(...pts);w=[...Array(n).keys()].filter(p=>pts[p]===best);}
+  const t=w.length>1?'Remíza!':'Vyhrál Hráč '+(w[0]+1)+'!';
+  $('msg').textContent=t;
+  $('passTxt').textContent=t;$('passBtn').textContent='Nová hra';$('passBtn').onclick=()=>{$('pass').classList.add('hidden');newGame();};
+  $('pass').classList.remove('hidden');beep(660,.3,.14);
+}
+function newGame(k){
+  n=k||n;lives=new Array(n).fill(3);pts=new Array(n).fill(0);
+  deck=fresh();table=deck.pop();cur=0;over=false;phase='wait';
+  $('passBtn').textContent='OK';$('cardB').textContent='?';$('cardB').classList.add('hid');
+  $('pass').classList.add('hidden');
+  $('msg').textContent='Hodnoty karet: A je nejnižší, K nejvyšší.';
+  ui();
+  turn();
+}
+document.querySelectorAll('#modes button').forEach(b=>b.onclick=()=>newGame(+b.dataset.n));
+$('hi').onclick=()=>guess(true);$('lo').onclick=()=>guess(false);
+$('nextBtn').onclick=advance;$('newBtn').onclick=()=>newGame();
+newGame(2);
+
+})();
+</script>
+</body>
+</html>

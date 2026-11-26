@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<!-- herna-ok -->
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vesmírná střílečka">
+<link rel="manifest" href="../../manifest.webmanifest">
+<link rel="icon" href="ikona.png">
+<title>Kámen, nůžky, papír</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;touch-action:manipulation}
+:root{--acc:#5ee7ff}
+body{font-family:ui-monospace,"Cascadia Mono","Roboto Mono",Menlo,"Courier New",monospace;color:#dfe6ff;background:#0b0d26;display:flex;flex-direction:column;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 10px calc(14px + env(safe-area-inset-bottom));overflow-x:hidden}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:-1;image-rendering:pixelated}
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+.top{width:100%;max-width:520px;display:flex;align-items:center;gap:8px}
+.round{width:38px;height:38px;background:#151a44;color:#dfe6ff;font-size:16px;font-weight:900;box-shadow:0 0 0 3px #2c3778;flex:none;margin:3px}
+h1{flex:1;margin:0;text-align:center;font-size:20px;letter-spacing:2px;text-transform:uppercase;color:var(--acc);text-shadow:3px 3px 0 #05061a}
+.mode{display:flex;gap:6px;margin:12px 0 6px;flex-wrap:wrap;justify-content:center}
+.mode button,.act{padding:9px 12px;background:#151a44;color:#dfe6ff;font-weight:900;font-size:12.5px;text-transform:uppercase;box-shadow:0 0 0 3px #2c3778;margin:3px}
+.mode button.on,.act.main{background:var(--acc);color:#0b0d26;box-shadow:0 0 0 3px var(--acc),inset 0 -4px 0 0 rgba(0,0,0,.25)}
+.act:disabled{opacity:.45}
+.act:active,.mode button:active,.round:active{transform:translate(2px,2px)}
+#msg{min-height:24px;font-size:14px;font-weight:800;color:#ffd166;margin:6px 0;text-align:center;text-transform:uppercase;letter-spacing:1px}
+.bottom{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;justify-content:center}
+.label{font-size:12px;font-weight:800;text-transform:uppercase;color:#8fa0d8;margin:8px 0 4px;letter-spacing:1px}
+.hidden{display:none!important}
+
+#pass{position:fixed;inset:0;background:rgba(5,6,26,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:5;text-align:center;padding:20px}
+#passTxt{font-size:18px;font-weight:900;color:var(--acc);text-transform:uppercase;letter-spacing:1px}
+#players{width:100%;max-width:520px;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.pl{padding:8px;background:#151a44;box-shadow:0 0 0 3px #2c3778;text-align:center;font-weight:900;text-transform:uppercase;font-size:12px;color:var(--c)}
+.pl .pts{font-size:22px;color:#dfe6ff;margin-top:2px}
+.pl.on{box-shadow:0 0 0 4px var(--c)}
+.pl.out{opacity:.4}
+.pl .lv{font-size:12px;color:#8fa0d8;margin-top:2px;letter-spacing:2px}
+
+#picks{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:14px 0 6px}
+#picks button{width:104px;height:104px;font-size:14px;font-weight:900;text-transform:uppercase;background:#151a44;color:#dfe6ff;box-shadow:0 0 0 3px #2c3778}
+#picks button:disabled{opacity:.35}
+#picks button.k{box-shadow:0 0 0 3px #ff8a2a}
+#picks button.p{box-shadow:0 0 0 3px #7dffa8}
+#picks button.n{box-shadow:0 0 0 3px #ff6bd6}
+#reveal{min-height:72px;margin-top:8px;text-align:center;font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#dfe6ff;line-height:1.7}
+#reveal b{color:#ffd166}
+
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="top"><button class="round" id="homeBtn" aria-label="Menu">⌂</button><h1>Kámen, nůžky, papír</h1><div style="width:42px"></div></div>
+
+<div class="mode" id="modes"><button data-n="2" class="on">2 hráči</button><button data-n="3">3 hráči</button><button data-n="4">4 hráči</button></div>
+<div id="players"></div>
+<div id="msg"></div>
+<div id="picks"><button id="p0" data-v="0" class="k">Kámen</button><button id="p1" data-v="1" class="p">Papír</button><button id="p2" data-v="2" class="n">Nůžky</button></div>
+<div id="reveal"></div>
+<div class="bottom"><button class="act main" id="nextBtn" disabled>Další kolo</button></div>
+<button class="act" id="newBtn" style="margin-top:12px">↻ Nová hra</button>
+<div id="pass" class="hidden"><div id="passTxt"></div><button class="act main" id="passBtn" style="font-size:16px;padding:16px 22px">OK</button></div>
+
+<script>
+(() => {
+const bg=document.getElementById('bg'),bc=bg.getContext('2d');let st=[];
+const size=()=>{bg.width=Math.ceil(innerWidth/3);bg.height=Math.ceil(innerHeight/3);st=Array.from({length:70},()=>({x:Math.random()*bg.width,y:Math.random()*bg.height,v:.02+Math.random()*.08,c:Math.random()<.15?'#ffffff':'#5f6cb8'}));};
+const frame=()=>{bc.fillStyle='#0b0d26';bc.fillRect(0,0,bg.width,bg.height);for(const s of st){s.y+=s.v;if(s.y>bg.height){s.y=0;s.x=Math.random()*bg.width;}bc.fillStyle=s.c;bc.fillRect(s.x|0,s.y|0,1,1);}requestAnimationFrame(frame);};
+addEventListener('resize',size);size();frame();
+const $=id=>document.getElementById(id);
+const rnd=n=>Math.floor(Math.random()*n);
+let AC=null;
+function beep(f,d,v=.12,t='triangle'){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const n=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,n);g.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(g);g.connect(AC.destination);o.start(n);o.stop(n+d);}catch(_){}}
+function vib(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(_){}}
+function sprite(rows,pal){const h=rows.length,w=rows[0].length,c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');rows.forEach((r,y)=>[...r].forEach((ch,x)=>{if(pal[ch]){g.fillStyle=pal[ch];g.fillRect(x,y,1,1);}}));return 'url('+c.toDataURL()+')';}
+$('homeBtn').onclick=()=>location.href='../../index.html';
+
+const COLS=['#41e6ff','#ff6bd6','#7dffa8','#ffd166'],NAMES=['Kámen','Papír','Nůžky'],TARGET=5;
+let n=2,scores=[],picks=[],cur=0,phase='pick';
+const beats=(a,b)=>(a===0&&b===2)||(a===1&&b===0)||(a===2&&b===1);
+function ui(){
+  const box=$('players');box.innerHTML='';
+  for(let p=0;p<n;p++){const el=document.createElement('div');el.className='pl'+(phase==='pick'&&p===cur?' on':'');el.style.setProperty('--c',COLS[p]);el.innerHTML='Hráč '+(p+1)+'<div class="pts">'+scores[p]+'</div>';box.appendChild(el);}
+  document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('on',+b.dataset.n===n));
+  for(let v=0;v<3;v++)$('p'+v).disabled=phase!=='pick';
+}
+function showPass(t,cb){$('passTxt').textContent=t;$('passBtn').onclick=()=>{$('pass').classList.add('hidden');cb();};$('pass').classList.remove('hidden');}
+function startRound(){
+  picks=[];cur=0;phase='pick';$('reveal').textContent='';$('nextBtn').disabled=true;
+  $('msg').textContent='Každý vybere tajně.';
+  askNext();
+}
+function askNext(){
+  phase='wait';ui();
+  showPass('Předej telefon: Hráč '+(cur+1)+' vybírá',()=>{phase='pick';ui();$('msg').textContent='Hráč '+(cur+1)+' vybírá.';});
+}
+function pick(v){
+  if(phase!=='pick')return;
+  picks[cur]=v;cur++;
+  if(cur<n){askNext();}else{resolve();}
+}
+function resolve(){
+  phase='reveal';ui();
+  const used=[...new Set(picks)];
+  let winVal=null;
+  if(used.length===2){winVal=beats(used[0],used[1])?used[0]:used[1];}
+  let txt=picks.map((v,p)=>'Hráč '+(p+1)+': <b>'+NAMES[v]+'</b>').join(' · ');
+  if(winVal===null){txt+='<br>Remíza, nikdo nebodoval.';}
+  else{
+    picks.forEach((v,p)=>{if(v===winVal)scores[p]++;});
+    txt+='<br>Bod pro '+picks.map((v,p)=>v===winVal?'Hráče '+(p+1):null).filter(Boolean).join(', ')+'.';
+  }
+  $('reveal').innerHTML=txt;ui();
+  const top=Math.max(...scores);
+  if(top>=TARGET){finish();return;}
+  $('nextBtn').disabled=false;
+}
+function finish(){
+  phase='over';ui();
+  const best=Math.max(...scores);const w=scores.map((s,p)=>s===best?p:-1).filter(p=>p>=0);
+  const t=w.length>1?'Remíza!':'Vyhrál Hráč '+(w[0]+1)+'!';
+  $('msg').textContent=t;$('passTxt').textContent=t+' ('+scores.join(' : ')+')';
+  $('passBtn').textContent='Nová hra';$('passBtn').onclick=()=>{$('pass').classList.add('hidden');newGame();};
+  $('pass').classList.remove('hidden');beep(660,.3,.14);
+}
+function newGame(k){n=k||n;scores=new Array(n).fill(0);$('passBtn').textContent='OK';$('pass').classList.add('hidden');startRound();}
+document.querySelectorAll('#modes button').forEach(b=>b.onclick=()=>newGame(+b.dataset.n));
+for(let v=0;v<3;v++)$('p'+v).onclick=()=>pick(v);
+$('nextBtn').onclick=startRound;$('newBtn').onclick=()=>newGame();
+newGame(2);
+
+})();
+</script>
+</body>
+</html>

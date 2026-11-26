@@ -1,7 +1,7 @@
 // ===== SEZNAM HER V HERNĚ =====
 // Novou hru přidáš tak, že ji dáš do složky hry/<nazev>/ a připíšeš ji sem.
 // Po každé změně zvyš VERZE o 1, aby si telefon stáhl novinky.
-self.HERNA_VERZE = 39;
+self.HERNA_VERZE = 40;
 self.HERNA_HRY = [
   {
     id: 'neon-najezd',
@@ -169,6 +169,28 @@ self.HERNA_HRY = [
     ikona: 'hry/kostky/ikona.png',
     barva: '#ffd166',
     soubory: ['hry/kostky/', 'hry/kostky/index.html', 'hry/kostky/ikona.png']
+  },
+  {
+    id: 'kamen',
+    nove: true,
+    nazev: 'Kámen, nůžky, papír',
+    popis: 'Každý tajně vybere znak, pak se ukáže, kdo vyhrál kolo. Na 5 bodů. Hrají 2 až 4 hráči na jednom telefonu.',
+    hraci: '2-4',
+    skupina: 'Šťastné hody',
+    ikona: 'hry/kamen/ikona.png',
+    barva: '#ff8a2a',
+    soubory: ['hry/kamen/', 'hry/kamen/index.html', 'hry/kamen/ikona.png']
+  },
+  {
+    id: 'vysi',
+    nove: true,
+    nazev: 'Vyšší, nižší',
+    popis: 'Odhadni, jestli bude další karta vyšší, nebo nižší. Špatný tip stojí život. Hrají 2 až 4 hráči na jednom telefonu.',
+    hraci: '2-4',
+    skupina: 'Karty a paměť',
+    ikona: 'hry/vysi/ikona.png',
+    barva: '#5ee7ff',
+    soubory: ['hry/vysi/', 'hry/vysi/index.html', 'hry/vysi/ikona.png']
   },
   {
     id: 'reakce',
