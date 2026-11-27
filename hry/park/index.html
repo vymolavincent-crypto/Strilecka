@@ -55,6 +55,10 @@ p{margin:0;color:#a7b2dc;font-size:13px;line-height:1.6;max-width:320px}
 .btn{--k:#7dffa8;width:240px;padding:13px;font-size:15px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:#0b0d26;background:var(--k);margin:4px;
   box-shadow:0 -4px 0 0 var(--k),0 4px 0 0 var(--k),-4px 0 0 0 var(--k),4px 0 0 0 var(--k),inset 0 -5px 0 0 rgba(0,0,0,.28)}
 .btn.g{--k:#2c3778;color:#dfe6ff}
+#codeBox{display:flex;gap:6px;align-items:center;justify-content:center;padding:8px 12px 0}
+#codeIn{flex:1;max-width:260px;height:32px;background:#151a44;border:0;box-shadow:0 0 0 2px #2c3778;color:#ffd24a;font:900 12px monospace;text-transform:uppercase;padding:0 6px;outline:none}
+#codeIn::placeholder{color:#8fa0d8;text-transform:none}
+#codeGo{height:32px;padding:0 14px;background:#e0262f;color:#fff;border:0;font:900 12px monospace;cursor:pointer}
 </style>
 <style id="xmas-theme">body{background:#0a2418!important}.act.main,.mode button.on{background:#e0262f!important;color:#fff!important;box-shadow:0 0 0 3px #2fb35a,inset 0 -4px 0 rgba(0,0,0,.25)!important}.act:not(.main){box-shadow:0 0 0 3px #1f7a3d!important}</style>
 </head>
@@ -67,6 +71,7 @@ p{margin:0;color:#a7b2dc;font-size:13px;line-height:1.6;max-width:320px}
 <canvas id="park"></canvas>
 <div id="shop">
   <div id="tabs"><button data-t="lide" class="on">👥 Lidé</button><button data-t="uklid">🧹 Úklid</button><button data-t="auta">🚛 Auta</button><button data-t="vyl">⭐ Vylepšení</button></div>
+  <div id="codeBox"><input id="codeIn" maxlength="12" placeholder="Zadej kód" autocomplete="off" autocapitalize="characters"><button id="codeGo">OK</button></div>
   <div id="list"></div>
 </div>
 
@@ -528,8 +533,44 @@ function incomePerSec(){
   return litter;
 }
 
+const KODY = { VANOCE: 35 };
+function useKod(){
+  const k = $('codeIn').value.trim().toUpperCase();
+  $('codeIn').value = '';
+  if (!k) return;
+  G.kody = G.kody || [];
+  if (!(k in KODY)) { $('codeIn').placeholder = 'Neplatný kód'; return; }
+  if (G.kody.includes(k)) { $('codeIn').placeholder = 'Už použitý'; return; }
+  G.kody.push(k); G.money += KODY[k]; G.total += KODY[k]; save(); hud();
+  $('codeIn').placeholder = 'Připsáno ' + KODY[k] + ' Kč!';
+}
+$('codeGo').onclick = useKod;
+$('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') useKod(); });
+function drawXmas(t){
+  const W = o.canvas.width, H = o.canvas.height;
+  const x = W - 16, y = 22;
+  o.fillStyle = 'rgba(0,0,0,.25)'; o.fillRect(x - 6, y + 14, 13, 2);
+  o.fillStyle = '#6a4220'; o.fillRect(x - 1, y + 10, 3, 4);
+  o.fillStyle = '#1f7a3d'; o.fillRect(x - 6, y + 4, 13, 3); o.fillRect(x - 5, y, 11, 3); o.fillRect(x - 4, y - 4, 9, 3); o.fillRect(x - 3, y - 8, 7, 3); o.fillRect(x - 1, y - 11, 3, 3);
+  o.fillStyle = '#2fb35a'; o.fillRect(x - 3, y - 6, 2, 1); o.fillRect(x + 1, y - 2, 2, 1); o.fillRect(x - 4, y + 5, 2, 1);
+  o.fillStyle = '#ffd24a'; o.fillRect(x, y - 13, 1, 2); o.fillRect(x - 1, y - 12, 3, 1);
+  const cols = ['#e0262f', '#ffd24a', '#ffffff'];
+  const spots = [[-4, -2], [3, -1], [-2, 2], [4, 4], [-5, 6], [1, -7], [-1, 6]];
+  spots.forEach((p, i) => { o.fillStyle = cols[i % 3]; o.fillRect(x + p[0], y + p[1], 1, 1); });
+  for (let i = 0; i < 6; i++) {
+    const lx = 4 + i * Math.floor((W - 10) / 6), ly = 3 + (i % 2);
+    o.fillStyle = (Math.floor(t * 3) + i) % 2 ? '#e0262f' : '#2fb35a';
+    o.fillRect(lx, ly, 2, 2);
+  }
+  for (let i = 0; i < 40; i++) {
+    const sx = (i * 37 + Math.floor(t * (6 + i % 5))) % W;
+    const sy = (i * 53 + Math.floor(t * (8 + i % 7))) % H;
+    o.fillStyle = '#ffffff'; o.fillRect(sx, sy, 1, 1);
+  }
+}
 function draw(t){
   o.drawImage(bgImg, 0, 0);
+  drawXmas(t);
   // odpadky na zemi
   for (const q of trash) {
     const img = trashImg[q.item], x = Math.round(q.x - img.width / 2), y = Math.round(q.y - img.height / 2);
